@@ -7,26 +7,36 @@
     <style>
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #1e272e; margin: 0; padding: 0; display: flex; height: 100vh; overflow: hidden; color: #333; }
         .panel-izquierdo { flex: 3; display: flex; flex-direction: column; padding: 15px; box-sizing: border-box; height: 100%; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         .header h1 { color: white; margin: 0; font-size: 24px; }
-        .btn-accion { background-color: #34495e; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-left: 10px; transition: 0.2s;}
-        .btn-accion:hover { background-color: #2c3e50; }
+        .btn-accion-top { background-color: #34495e; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-left: 10px; transition: 0.2s;}
+        .btn-accion-top:hover { background-color: #2c3e50; }
         .btn-peligro { background-color: #c0392b; }
         .btn-peligro:hover { background-color: #922b21; }
-        .tablero { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); gap: 15px; }
-        .tarjeta-jugador { background-color: #ffffff; padding: 15px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); text-align: center; border-top: 8px solid; display: flex; flex-direction: column; justify-content: center; }
+        
+        .tablero { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); gap: 10px; }
+        .tarjeta-jugador { background-color: #ffffff; padding: 10px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); text-align: center; border-top: 8px solid; display: flex; flex-direction: column; justify-content: space-between; }
         
         #jugador-1 { border-top-color: #e74c3c; } #jugador-2 { border-top-color: #3498db; } #jugador-3 { border-top-color: #2ecc71; } 
         #jugador-4 { border-top-color: #f1c40f; } #jugador-5 { border-top-color: #9b59b6; } #jugador-6 { border-top-color: #e67e22; }
         
-        .nombre-input { width: 100%; font-size: 22px; font-weight: bold; text-align: center; border: none; border-bottom: 2px dashed #bdc3c7; margin-bottom: 15px; padding: 5px; color: #2c3e50; background: transparent; }
+        .nombre-input { width: 100%; font-size: 18px; font-weight: bold; text-align: center; border: none; border-bottom: 2px dashed #bdc3c7; margin-bottom: 5px; padding: 5px; color: #2c3e50; background: transparent; box-sizing: border-box; }
         .nombre-input:focus { outline: none; border-bottom-color: #34495e; }
-        .saldo-display { font-size: 42px; font-weight: bold; color: #27ae60; margin: 10px 0; }
-        .qr-hint { font-size: 13px; color: #7f8c8d; margin-top: 15px; }
+        .saldo-display { font-size: 32px; font-weight: bold; color: #27ae60; margin: 5px 0; }
         
+        /* Controles del Banquero */
+        .controles-banco { background-color: #f8f9fa; padding: 8px; border-radius: 6px; border: 1px solid #ecf0f1; }
+        .titulo-banco { font-size: 11px; text-transform: uppercase; color: #7f8c8d; margin-bottom: 5px; font-weight: bold; }
+        .btn-salida-banco { background-color: #f39c12; color: white; border: none; padding: 6px; width: 100%; font-size: 12px; font-weight: bold; border-radius: 4px; cursor: pointer; margin-bottom: 6px; }
+        .btn-salida-banco:hover { background-color: #d68910; }
+        .monto-input-banco { width: 100%; padding: 6px; font-size: 13px; border: 1px solid #bdc3c7; border-radius: 4px; box-sizing: border-box; margin-bottom: 6px; text-align: center; }
+        .btn-quitar, .btn-dar { flex: 1; padding: 6px; color: white; border: none; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; }
+        .btn-quitar { background-color: #c0392b; }
+        .btn-dar { background-color: #27ae60; }
+
         .panel-derecho { flex: 1; background-color: #ffffff; height: 100%; padding: 15px; box-sizing: border-box; overflow-y: auto; border-left: 2px solid #2c3e50; }
         .panel-derecho h3 { margin-top: 0; color: #2c3e50; font-size: 18px; text-align: center; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; position: sticky; top: 0; background-color: white; }
-        .registro { font-size: 14px; padding: 10px 0; border-bottom: 1px solid #ecf0f1; line-height: 1.4; }
+        .registro { font-size: 13px; padding: 8px 0; border-bottom: 1px solid #ecf0f1; line-height: 1.4; }
     </style>
 </head>
 <body>
@@ -35,8 +45,8 @@
         <div class="header">
             <h1>Tablero Principal Monopoly</h1>
             <div>
-                <button class="btn-accion btn-peligro" id="btnReiniciar">Reiniciar Partida</button>
-                <button class="btn-accion" id="btnFullscreen">Pantalla Completa</button>
+                <button class="btn-accion-top btn-peligro" id="btnReiniciar">Reiniciar Partida</button>
+                <button class="btn-accion-top" id="btnFullscreen">Pantalla Completa</button>
             </div>
         </div>
         <div class="tablero" id="tablero">
@@ -50,9 +60,9 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getDatabase, ref, onValue, set, push } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+        // Importamos get y update para poder mandar los pagos desde aquí
+        import { getDatabase, ref, onValue, set, push, get, update } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
-        // Tu configuración de Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyAXwEe_UM2tVwS3qm_SUoIO_jgBPw8mkCM",
             authDomain: "monopolysaava.firebaseapp.com",
@@ -74,6 +84,16 @@
             return numero.toLocaleString('es-MX');
         }
 
+        // Intérprete para que el banquero pueda escribir 1.5 o 500K
+        function interpretarEntrada(texto) {
+            const txt = String(texto).trim().toUpperCase();
+            if (txt === "") return 0;
+            if (txt.endsWith('K')) return parseFloat(txt) * 1000;
+            if (txt.endsWith('M')) return parseFloat(txt) * 1000000;
+            const valor = parseFloat(txt);
+            return isNaN(valor) ? 0 : valor * 1000000;
+        }
+
         // Dibuja el tablero escuchando los datos en tiempo real
         onValue(ref(db, 'jugadores'), (snapshot) => {
             const datos = snapshot.val();
@@ -93,21 +113,68 @@
                         <div>
                             <input type="text" class="nombre-input" id="nombre-${i}" value="${j.nombre}" placeholder="Jugador ${i}">
                             <div class="saldo-display">${formatearMoneda(j.saldo)}</div>
-                            <div class="qr-hint">Celular ID: <strong>${i}</strong></div>
+                        </div>
+                        <div class="controles-banco">
+                            <div class="titulo-banco">🏦 Acción del Banco</div>
+                            <button class="btn-salida-banco" onclick="procesarBanco('salida', ${i})">Salida (+ 2M)</button>
+                            <input type="text" class="monto-input-banco" id="monto-banco-${i}" placeholder="Monto (ej. 1.5, 500K)">
+                            <div style="display: flex; gap: 5px;">
+                                <button class="btn-quitar" onclick="procesarBanco('quitar', ${i})">Quitar (-)</button>
+                                <button class="btn-dar" onclick="procesarBanco('dar', ${i})">Dar (+)</button>
+                            </div>
                         </div>
                     `;
                     document.getElementById('tablero').appendChild(tarjeta);
 
-                    // Si cambias el nombre en la PC, se guarda en la nube al instante
                     document.getElementById(`nombre-${i}`).addEventListener('change', (e) => {
                         set(ref(db, `jugadores/${i}/nombre`), e.target.value);
                     });
                 }
             } else {
-                // Si no hay datos, inicializamos
                 reiniciarBaseDeDatos();
             }
         });
+
+        // FUNCIONES DE CONTROL DEL BANCO (Globales para que los botones las encuentren)
+        window.procesarBanco = async function(accion, idJugador) {
+            const input = document.getElementById(`monto-banco-${idJugador}`);
+            let monto = 0;
+            
+            if (accion !== 'salida') {
+                monto = interpretarEntrada(input.value);
+                if (monto <= 0) return alert("Ingresa un monto válido");
+            }
+
+            try {
+                // Traemos el saldo más reciente de la nube
+                const snapshot = await get(ref(db, `jugadores/${idJugador}`));
+                const jugador = snapshot.val();
+                
+                let updates = {};
+                let logMsg = "";
+                const hora = new Date().toLocaleTimeString('es-MX', {hour: '2-digit', minute:'2-digit'});
+
+                if (accion === 'salida') {
+                    updates[`jugadores/${idJugador}/saldo`] = jugador.saldo + 2000000;
+                    logMsg = `<strong>[${hora}] 🏦 BANCO:</strong><br> Le pagó la Salida a ${jugador.nombre} <strong>+ 2 M</strong>`;
+                } else if (accion === 'dar') {
+                    updates[`jugadores/${idJugador}/saldo`] = jugador.saldo + monto;
+                    logMsg = `<strong>[${hora}] 🏦 BANCO:</strong><br> Le dio a ${jugador.nombre} <strong>+ ${formatearMoneda(monto)}</strong>`;
+                } else if (accion === 'quitar') {
+                    updates[`jugadores/${idJugador}/saldo`] = jugador.saldo - monto;
+                    logMsg = `<strong>[${hora}] 🏦 BANCO:</strong><br> Le cobró/quitó a ${jugador.nombre} <strong>- ${formatearMoneda(monto)}</strong>`;
+                }
+
+                await update(ref(db), updates);
+                await push(ref(db, 'historial'), logMsg);
+                
+                if (input) input.value = '';
+
+            } catch (error) {
+                alert("Hubo un error al conectar con el Banco");
+                console.error(error);
+            }
+        };
 
         // Escuchar el historial en tiempo real
         onValue(ref(db, 'historial'), (snapshot) => {
