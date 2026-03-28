@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Billetera - Jugador 1</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #1e272e; color: white; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        
+        .header { width: 100%; text-align: center; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 24px; font-weight: bold; box-sizing: border-box; background-color: #e74c3c; /* ROJO FIJO PARA JUGADOR 1 */}
+        .saldo-actual { font-size: 36px; margin-bottom: 20px; color: #2ecc71; font-weight: bold; }
+        
+        input, select, button { width: 100%; max-width: 400px; padding: 15px; margin-bottom: 12px; font-size: 18px; border-radius: 8px; border: none; box-sizing: border-box; text-align: center; }
+        input:focus, select:focus { outline: none; border: 2px solid #3498db; }
+        
+        .btn-salida { background-color: #f39c12; color: white; font-weight: bold; }
+        .btn-pagar { background-color: #c0392b; color: white; font-weight: bold; }
+        .btn-cobrar { background-color: #27ae60; color: white; font-weight: bold; }
+        .btn-transferir { background-color: #34495e; color: white; font-weight: bold; margin-top: 5px; }
+        .btn-todos { background-color: #8e44ad; color: white; font-weight: bold;}
+        
+        hr { width: 100%; max-width: 400px; border-color: #555; margin: 20px 0; }
+        .seccion-titulo { width: 100%; max-width: 400px; font-size: 14px; color: #bdc3c7; text-transform: uppercase; margin-bottom: 10px; text-align: left; }
+    </style>
+</head>
+<body>
+
+    <div class="header" id="headerJugador">Conectando...</div>
+    <div class="saldo-actual" id="miSaldo">-- M</div>
+
+    <button class="btn-salida" onclick="procesar('salida')">Pase por Salida (+ 2M)</button>
+    
+    <hr>
+    
+    <div class="seccion-titulo">Monto de la Transacción</div>
+    <input type="text" id="montoInput" placeholder="Ej: 1.5, 2 o 500K">
+    
+    <button class="btn-pagar" onclick="procesar('pagar_banco')">Pagar al Banco (-)</button>
+    <button class="btn-cobrar" onclick="procesar('cobrar_banco')">Cobrar del Banco (+)</button>
+
+    <hr>
+
+    <div class="seccion-titulo">Pagar Renta a Jugador</div>
+    <select id="destinoSelect">
+        <option value="">Selecciona a quién pagar...</option>
+    </select>
+    <button class="btn-transferir" onclick="procesar('transferir')">Hacer Transferencia</button>
+    <button class="btn-todos" onclick="procesar('pagar_todos')">Pagar a TODOS</button>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getDatabase, ref, get, update, push, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+        // Tu configuración de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAXwEe_UM2tVwS3qm_SUoIO_jgBPw8mkCM",
+            authDomain: "monopolysaava.firebaseapp.com",
+            databaseURL: "https://monopolysaava-default-rtdb.firebaseio.com",
+            projectId: "monopolysaava",
+            storageBucket: "monopolysaava.firebasestorage.app",
+            messagingSenderId: "812339314745",
+            appId: "1:812339314745:web:a8b330d12b310dd4514de8"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // 🔥 AQUÍ SE FIJA QUE ESTE ES EL JUGADOR 3 🔥
+        const miId = 3;
+
+        function formatearMoneda(numero) {
+            if (numero >= 1000000) return (numero / 1000000) + ' M';
+            if (numero >= 1000) return (numero / 1000) + ' K';
+            if (numero === 0) return '0';
+            return numero.toLocaleString('es-MX');
+        }
+
+        function interpretarEntrada(texto) {
+            const txt = String(texto).trim().toUpperCase();
+            if (txt === "") return 0;
+            if (txt.endsWith('K')) return parseFloat(txt) * 1000;
+            if (txt.endsWith('M')) return parseFloat(txt) * 1000000;
+            const valor = parseFloat(txt);
+            return isNaN(valor) ? 0 : valor * 1000000;
+        }
+
+        // Mantener actualizado mi saldo y el select de jugadores
+        onValue(ref(db, 'jugadores'), (snapshot) => {
+            const jugadores = snapshot.val();
+            if (jugadores && jugadores[miId]) {
+                const yo = jugadores[miId];
+                document.getElementById('headerJugador').textContent = yo.nombre;
+                document.getElementById('miSaldo').textContent = formatearMoneda(yo.saldo);
+
+                const select = document.getElementById('destinoSelect');
+                const valorSeleccionado = select.value; 
+                select.innerHTML = '<option value="">Selecciona a quién pagar...</option>';
+                
+                for (let i = 1; i <= 6; i++) {
+                    if (i !== miId && jugadores[i]) {
+                        const opt = document.createElement('option');
+                        opt.value = i;
+                        opt.textContent = jugadores[i].nombre;
+                        select.appendChild(opt);
+                    }
+                }
+                select.value = valorSeleccionado; 
+            }
+        });
+
+        window.procesar = async function(tipo) {
+            const montoTexto = document.getElementById('montoInput').value;
+            const monto = interpretarEntrada(montoTexto);
+            
+            if (monto <= 0 && tipo !== 'salida') return alert("Ingresa un monto válido");
+
+            const botones = document.querySelectorAll('button');
+            botones.forEach(b => b.disabled = true);
+
+            try {
+                const snapshot = await get(ref(db, 'jugadores'));
+                const jugadores = snapshot.val();
+                const yo = jugadores[miId];
+                
+                let updates = {};
+                let logMsg = "";
+                const hora = new Date().toLocaleTimeString('es-MX', {hour: '2-digit', minute:'2-digit'});
+
+                if (tipo === 'salida') {
+                    updates[`jugadores/${miId}/saldo`] = yo.saldo + 2000000;
+                    logMsg = `<strong>[${hora}] ${yo.nombre}:</strong><br> Cobró la Salida <strong>+ 2 M</strong>`;
+                } 
+                else if (tipo === 'pagar_banco') {
+                    updates[`jugadores/${miId}/saldo`] = yo.saldo - monto;
+                    logMsg = `<strong>[${hora}] ${yo.nombre}:</strong><br> Pagó al Banco <strong>- ${formatearMoneda(monto)}</strong>`;
+                } 
+                else if (tipo === 'cobrar_banco') {
+                    updates[`jugadores/${miId}/saldo`] = yo.saldo + monto;
+                    logMsg = `<strong>[${hora}] ${yo.nombre}:</strong><br> Cobró del Banco <strong>+ ${formatearMoneda(monto)}</strong>`;
+                } 
+                else if (tipo === 'transferir') {
+                    const idDestino = parseInt(document.getElementById('destinoSelect').value);
+                    if (!idDestino) throw new Error("Selecciona a un jugador");
+                    
+                    const dest = jugadores[idDestino];
+                    updates[`jugadores/${miId}/saldo`] = yo.saldo - monto;
+                    updates[`jugadores/${idDestino}/saldo`] = dest.saldo + monto;
+                    logMsg = `<strong>[${hora}] ${yo.nombre}:</strong><br> Pagó a ${dest.nombre} <strong>${formatearMoneda(monto)}</strong>`;
+                }
+                else if (tipo === 'pagar_todos') {
+                    const total = monto * 5;
+                    if (!confirm(`Pagarás ${formatearMoneda(monto)} a TODOS los demás (Total: ${formatearMoneda(total)}). ¿Confirmas?`)) throw new Error("Cancelado");
+                    
+                    updates[`jugadores/${miId}/saldo`] = yo.saldo - total;
+                    for (let i = 1; i <= 6; i++) {
+                        if (i !== miId) updates[`jugadores/${i}/saldo`] = jugadores[i].saldo + monto;
+                    }
+                    logMsg = `<strong>[${hora}] ${yo.nombre}:</strong><br> Pagó a TODOS <strong>${formatearMoneda(monto)} c/u</strong>`;
+                }
+
+                await update(ref(db), updates);
+                await push(ref(db, 'historial'), logMsg);
+                
+                document.getElementById('montoInput').value = '';
+                if(navigator.vibrate) navigator.vibrate(50);
+
+            } catch (error) {
+                if (error.message !== "Cancelado") alert(error.message);
+            } finally {
+                botones.forEach(b => b.disabled = false);
+            }
+        }
+    </script>
+</body>
+</html>
