@@ -13,9 +13,7 @@
         input, select, button { width: 100%; max-width: 400px; padding: 15px; margin-bottom: 12px; font-size: 18px; border-radius: 8px; border: none; box-sizing: border-box; text-align: center; }
         input:focus, select:focus { outline: none; border: 2px solid #3498db; }
         
-        .btn-salida { background-color: #f39c12; color: white; font-weight: bold; }
         .btn-pagar { background-color: #c0392b; color: white; font-weight: bold; }
-        .btn-cobrar { background-color: #27ae60; color: white; font-weight: bold; }
         .btn-transferir { background-color: #34495e; color: white; font-weight: bold; margin-top: 5px; }
         .btn-todos { background-color: #8e44ad; color: white; font-weight: bold;}
         
@@ -27,16 +25,11 @@
 
     <div class="header" id="headerJugador">Conectando...</div>
     <div class="saldo-actual" id="miSaldo">-- M</div>
-
-    <button class="btn-salida" onclick="procesar('salida')">Pase por Salida (+ 2M)</button>
-    
-    <hr>
     
     <div class="seccion-titulo">Monto de la Transacción</div>
     <input type="text" id="montoInput" placeholder="Ej: 1.5, 2 o 500K">
     
     <button class="btn-pagar" onclick="procesar('pagar_banco')">Pagar al Banco (-)</button>
-    <button class="btn-cobrar" onclick="procesar('cobrar_banco')">Cobrar del Banco (+)</button>
 
     <hr>
 
@@ -51,7 +44,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getDatabase, ref, get, update, push, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
-        // Tu configuración de Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyAXwEe_UM2tVwS3qm_SUoIO_jgBPw8mkCM",
             authDomain: "monopolysaava.firebaseapp.com",
@@ -65,7 +57,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // 🔥 AQUÍ SE FIJA QUE ESTE ES EL JUGADOR 1 🔥
+        // 🔥 ESTE ES EL JUGADOR 1 🔥
         const miId = 1;
 
         function formatearMoneda(numero) {
@@ -84,7 +76,6 @@
             return isNaN(valor) ? 0 : valor * 1000000;
         }
 
-        // Mantener actualizado mi saldo y el select de jugadores
         onValue(ref(db, 'jugadores'), (snapshot) => {
             const jugadores = snapshot.val();
             if (jugadores && jugadores[miId]) {
@@ -112,7 +103,7 @@
             const montoTexto = document.getElementById('montoInput').value;
             const monto = interpretarEntrada(montoTexto);
             
-            if (monto <= 0 && tipo !== 'salida') return alert("Ingresa un monto válido");
+            if (monto <= 0) return alert("Ingresa un monto válido");
 
             const botones = document.querySelectorAll('button');
             botones.forEach(b => b.disabled = true);
@@ -122,21 +113,18 @@
                 const jugadores = snapshot.val();
                 const yo = jugadores[miId];
                 
+                if (yo.saldo < monto && tipo !== 'pagar_todos') {
+                    const confirmar = confirm(`No tienes fondos suficientes. Tienes ${formatearMoneda(yo.saldo)} y quieres pagar ${formatearMoneda(monto)}. ¿Deseas endeudarte y quedar en números rojos?`);
+                    if (!confirmar) throw new Error("Cancelado");
+                }
+
                 let updates = {};
                 let logMsg = "";
                 const hora = new Date().toLocaleTimeString('es-MX', {hour: '2-digit', minute:'2-digit'});
 
-                if (tipo === 'salida') {
-                    updates[`jugadores/${miId}/saldo`] = yo.saldo + 2000000;
-                    logMsg = `<strong>[${hora}] ${yo.nombre}:</strong><br> Cobró la Salida <strong>+ 2 M</strong>`;
-                } 
-                else if (tipo === 'pagar_banco') {
+                if (tipo === 'pagar_banco') {
                     updates[`jugadores/${miId}/saldo`] = yo.saldo - monto;
                     logMsg = `<strong>[${hora}] ${yo.nombre}:</strong><br> Pagó al Banco <strong>- ${formatearMoneda(monto)}</strong>`;
-                } 
-                else if (tipo === 'cobrar_banco') {
-                    updates[`jugadores/${miId}/saldo`] = yo.saldo + monto;
-                    logMsg = `<strong>[${hora}] ${yo.nombre}:</strong><br> Cobró del Banco <strong>+ ${formatearMoneda(monto)}</strong>`;
                 } 
                 else if (tipo === 'transferir') {
                     const idDestino = parseInt(document.getElementById('destinoSelect').value);
@@ -149,7 +137,13 @@
                 }
                 else if (tipo === 'pagar_todos') {
                     const total = monto * 5;
-                    if (!confirm(`Pagarás ${formatearMoneda(monto)} a TODOS los demás (Total: ${formatearMoneda(total)}). ¿Confirmas?`)) throw new Error("Cancelado");
+                    
+                    if (yo.saldo < total) {
+                        const confirmar = confirm(`No tienes fondos suficientes. Pagar a todos te costará ${formatearMoneda(total)}. ¿Deseas quedar en números rojos?`);
+                        if (!confirmar) throw new Error("Cancelado");
+                    } else {
+                        if (!confirm(`Pagarás ${formatearMoneda(monto)} a TODOS los demás (Total: ${formatearMoneda(total)}). ¿Confirmas?`)) throw new Error("Cancelado");
+                    }
                     
                     updates[`jugadores/${miId}/saldo`] = yo.saldo - total;
                     for (let i = 1; i <= 6; i++) {
