@@ -6,30 +6,36 @@
     <title>Billetera - Jugador 1</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #1e272e; color: white; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        
-        .header { width: 100%; text-align: center; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 24px; font-weight: bold; box-sizing: border-box; background-color: #e74c3c; /* ROJO FIJO PARA JUGADOR 1 */}
-        .saldo-actual { font-size: 36px; margin-bottom: 20px; color: #2ecc71; font-weight: bold; }
-        
+        .header { width: 100%; text-align: center; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 24px; font-weight: bold; box-sizing: border-box; background-color: #e74c3c; }
+        .saldo-actual { font-size: 36px; margin-bottom: 20px; color: #2ecc71; font-weight: bold; text-align: center; }
+        .inactivo-msg { color: #e74c3c; font-size: 20px; display: none; margin-bottom: 20px; font-weight: bold; text-align: center; }
         input, select, button { width: 100%; max-width: 400px; padding: 15px; margin-bottom: 12px; font-size: 18px; border-radius: 8px; border: none; box-sizing: border-box; text-align: center; }
         input:focus, select:focus { outline: none; border: 2px solid #3498db; }
+        input:disabled, select:disabled, button:disabled { opacity: 0.5; cursor: not-allowed; }
         
         .btn-pagar { background-color: #c0392b; color: white; font-weight: bold; }
         .btn-transferir { background-color: #34495e; color: white; font-weight: bold; margin-top: 5px; }
         .btn-todos { background-color: #8e44ad; color: white; font-weight: bold;}
-        
         hr { width: 100%; max-width: 400px; border-color: #555; margin: 20px 0; }
-        .seccion-titulo { width: 100%; max-width: 400px; font-size: 14px; color: #bdc3c7; text-transform: uppercase; margin-bottom: 10px; text-align: left; }
+        .seccion-titulo { width: 100%; max-width: 400px; font-size: 14px; color: #bdc3c7; text-transform: uppercase; margin-bottom: 10px; text-align: left; font-weight: bold; }
+        
+        /* Estilos del nuevo historial en celular */
+        .historial-container { width: 100%; max-width: 400px; background-color: #2c3e50; border-radius: 8px; padding: 15px; box-sizing: border-box; max-height: 220px; overflow-y: auto; text-align: left; font-size: 13px; color: #ecf0f1; border: 1px solid #34495e; }
+        .registro { padding: 8px 0; border-bottom: 1px solid #34495e; line-height: 1.4; }
+        .registro:last-child { border-bottom: none; }
     </style>
 </head>
 <body>
 
     <div class="header" id="headerJugador">Conectando...</div>
+    
+    <div class="inactivo-msg" id="msgInactivo">🚫 JUGADOR INACTIVO / BANCARROTA 🚫</div>
     <div class="saldo-actual" id="miSaldo">-- M</div>
     
     <div class="seccion-titulo">Monto de la Transacción</div>
     <input type="text" id="montoInput" placeholder="Ej: 1.5, 2 o 500K">
     
-    <button class="btn-pagar" onclick="procesar('pagar_banco')">Pagar al Banco (-)</button>
+    <button class="btn-pagar" id="btnPagar" onclick="procesar('pagar_banco')">Pagar al Banco (-)</button>
 
     <hr>
 
@@ -37,8 +43,15 @@
     <select id="destinoSelect">
         <option value="">Selecciona a quién pagar...</option>
     </select>
-    <button class="btn-transferir" onclick="procesar('transferir')">Hacer Transferencia</button>
-    <button class="btn-todos" onclick="procesar('pagar_todos')">Pagar a TODOS</button>
+    <button class="btn-transferir" id="btnTrans" onclick="procesar('transferir')">Hacer Transferencia</button>
+    <button class="btn-todos" id="btnTodos" onclick="procesar('pagar_todos')">Pagar a TODOS</button>
+
+    <hr>
+    
+    <div class="seccion-titulo">Últimos Movimientos</div>
+    <div class="historial-container" id="historialJugador">
+        <div class="registro">Cargando historial...</div>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
@@ -76,19 +89,34 @@
             return isNaN(valor) ? 0 : valor * 1000000;
         }
 
+        // 1. Escuchar los datos del jugador (Saldo, Estado y Select)
         onValue(ref(db, 'jugadores'), (snapshot) => {
             const jugadores = snapshot.val();
             if (jugadores && jugadores[miId]) {
                 const yo = jugadores[miId];
+                const isActivo = yo.activo !== false;
+                
                 document.getElementById('headerJugador').textContent = yo.nombre;
-                document.getElementById('miSaldo').textContent = formatearMoneda(yo.saldo);
+
+                const elementosUI = ['montoInput', 'destinoSelect', 'btnPagar', 'btnTrans', 'btnTodos'];
+                if (!isActivo) {
+                    document.getElementById('msgInactivo').style.display = 'block';
+                    document.getElementById('miSaldo').style.display = 'none';
+                    elementosUI.forEach(id => document.getElementById(id).disabled = true);
+                    return; 
+                } else {
+                    document.getElementById('msgInactivo').style.display = 'none';
+                    document.getElementById('miSaldo').style.display = 'block';
+                    document.getElementById('miSaldo').textContent = formatearMoneda(yo.saldo);
+                    elementosUI.forEach(id => document.getElementById(id).disabled = false);
+                }
 
                 const select = document.getElementById('destinoSelect');
                 const valorSeleccionado = select.value; 
                 select.innerHTML = '<option value="">Selecciona a quién pagar...</option>';
                 
                 for (let i = 1; i <= 6; i++) {
-                    if (i !== miId && jugadores[i]) {
+                    if (i !== miId && jugadores[i] && jugadores[i].activo !== false) {
                         const opt = document.createElement('option');
                         opt.value = i;
                         opt.textContent = jugadores[i].nombre;
@@ -99,6 +127,23 @@
             }
         });
 
+        // 2. Escuchar el Historial en tiempo real para el celular
+        onValue(ref(db, 'historial'), (snapshot) => {
+            const historialContainer = document.getElementById('historialJugador');
+            historialContainer.innerHTML = '';
+            const registros = [];
+            snapshot.forEach((child) => { registros.push(child.val()); });
+            
+            // Los invertimos para ver primero el más reciente
+            registros.reverse().forEach(reg => {
+                const div = document.createElement('div');
+                div.className = 'registro';
+                div.innerHTML = reg;
+                historialContainer.appendChild(div);
+            });
+        });
+
+        // 3. Procesar Transacciones
         window.procesar = async function(tipo) {
             const montoTexto = document.getElementById('montoInput').value;
             const monto = interpretarEntrada(montoTexto);
@@ -113,8 +158,15 @@
                 const jugadores = snapshot.val();
                 const yo = jugadores[miId];
                 
+                let idsActivos = [];
+                for (let i = 1; i <= 6; i++) {
+                    if (i !== miId && jugadores[i] && jugadores[i].activo !== false) {
+                        idsActivos.push(i);
+                    }
+                }
+
                 if (yo.saldo < monto && tipo !== 'pagar_todos') {
-                    const confirmar = confirm(`No tienes fondos suficientes. Tienes ${formatearMoneda(yo.saldo)} y quieres pagar ${formatearMoneda(monto)}. ¿Deseas endeudarte y quedar en números rojos?`);
+                    const confirmar = confirm(`No tienes fondos suficientes. Tienes ${formatearMoneda(yo.saldo)} y pagarás ${formatearMoneda(monto)}. ¿Deseas quedar en números rojos?`);
                     if (!confirmar) throw new Error("Cancelado");
                 }
 
@@ -136,19 +188,21 @@
                     logMsg = `<strong>[${hora}] ${yo.nombre}:</strong><br> Pagó a ${dest.nombre} <strong>${formatearMoneda(monto)}</strong>`;
                 }
                 else if (tipo === 'pagar_todos') {
-                    const total = monto * 5;
+                    if (idsActivos.length === 0) throw new Error("No hay otros jugadores activos en la partida para pagarles.");
+                    
+                    const total = monto * idsActivos.length;
                     
                     if (yo.saldo < total) {
-                        const confirmar = confirm(`No tienes fondos suficientes. Pagar a todos te costará ${formatearMoneda(total)}. ¿Deseas quedar en números rojos?`);
+                        const confirmar = confirm(`No tienes fondos suficientes. Pagar a los ${idsActivos.length} activos te costará ${formatearMoneda(total)}. ¿Deseas quedar en números rojos?`);
                         if (!confirmar) throw new Error("Cancelado");
                     } else {
-                        if (!confirm(`Pagarás ${formatearMoneda(monto)} a TODOS los demás (Total: ${formatearMoneda(total)}). ¿Confirmas?`)) throw new Error("Cancelado");
+                        if (!confirm(`Pagarás ${formatearMoneda(monto)} a los ${idsActivos.length} jugadores activos (Total: ${formatearMoneda(total)}). ¿Confirmas?`)) throw new Error("Cancelado");
                     }
                     
                     updates[`jugadores/${miId}/saldo`] = yo.saldo - total;
-                    for (let i = 1; i <= 6; i++) {
-                        if (i !== miId) updates[`jugadores/${i}/saldo`] = jugadores[i].saldo + monto;
-                    }
+                    idsActivos.forEach(id => {
+                        updates[`jugadores/${id}/saldo`] = jugadores[id].saldo + monto;
+                    });
                     logMsg = `<strong>[${hora}] ${yo.nombre}:</strong><br> Pagó a TODOS <strong>${formatearMoneda(monto)} c/u</strong>`;
                 }
 
