@@ -2,55 +2,57 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Billetera Monopoly</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banco Monopoly - Pantalla Principal</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #1e272e; color: white; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #1e272e; margin: 0; padding: 0; display: flex; height: 100vh; overflow: hidden; color: #333; }
+        .panel-izquierdo { flex: 3; display: flex; flex-direction: column; padding: 15px; box-sizing: border-box; height: 100%; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .header h1 { color: white; margin: 0; font-size: 24px; }
+        .btn-accion { background-color: #34495e; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-left: 10px; transition: 0.2s;}
+        .btn-accion:hover { background-color: #2c3e50; }
+        .btn-peligro { background-color: #c0392b; }
+        .btn-peligro:hover { background-color: #922b21; }
+        .tablero { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); gap: 15px; }
+        .tarjeta-jugador { background-color: #ffffff; padding: 15px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); text-align: center; border-top: 8px solid; display: flex; flex-direction: column; justify-content: center; }
         
-        .header { width: 100%; text-align: center; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 24px; font-weight: bold; box-sizing: border-box;}
-        .saldo-actual { font-size: 36px; margin-bottom: 20px; color: #2ecc71; font-weight: bold; }
+        #jugador-1 { border-top-color: #e74c3c; } #jugador-2 { border-top-color: #3498db; } #jugador-3 { border-top-color: #2ecc71; } 
+        #jugador-4 { border-top-color: #f1c40f; } #jugador-5 { border-top-color: #9b59b6; } #jugador-6 { border-top-color: #e67e22; }
         
-        input, select, button { width: 100%; max-width: 400px; padding: 15px; margin-bottom: 12px; font-size: 18px; border-radius: 8px; border: none; box-sizing: border-box; text-align: center; }
-        input:focus, select:focus { outline: none; border: 2px solid #3498db; }
+        .nombre-input { width: 100%; font-size: 22px; font-weight: bold; text-align: center; border: none; border-bottom: 2px dashed #bdc3c7; margin-bottom: 15px; padding: 5px; color: #2c3e50; background: transparent; }
+        .nombre-input:focus { outline: none; border-bottom-color: #34495e; }
+        .saldo-display { font-size: 42px; font-weight: bold; color: #27ae60; margin: 10px 0; }
+        .qr-hint { font-size: 13px; color: #7f8c8d; margin-top: 15px; }
         
-        .btn-salida { background-color: #f39c12; color: white; font-weight: bold; }
-        .btn-pagar { background-color: #c0392b; color: white; font-weight: bold; }
-        .btn-cobrar { background-color: #27ae60; color: white; font-weight: bold; }
-        .btn-transferir { background-color: #34495e; color: white; font-weight: bold; margin-top: 5px; }
-        .btn-todos { background-color: #8e44ad; color: white; font-weight: bold;}
-        
-        hr { width: 100%; max-width: 400px; border-color: #555; margin: 20px 0; }
-        .seccion-titulo { width: 100%; max-width: 400px; font-size: 14px; color: #bdc3c7; text-transform: uppercase; margin-bottom: 10px; text-align: left; }
+        .panel-derecho { flex: 1; background-color: #ffffff; height: 100%; padding: 15px; box-sizing: border-box; overflow-y: auto; border-left: 2px solid #2c3e50; }
+        .panel-derecho h3 { margin-top: 0; color: #2c3e50; font-size: 18px; text-align: center; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; position: sticky; top: 0; background-color: white; }
+        .registro { font-size: 14px; padding: 10px 0; border-bottom: 1px solid #ecf0f1; line-height: 1.4; }
     </style>
 </head>
 <body>
 
-    <div class="header" id="headerJugador">Conectando...</div>
-    <div class="saldo-actual" id="miSaldo">-- M</div>
+    <div class="panel-izquierdo">
+        <div class="header">
+            <h1>Tablero Principal Monopoly</h1>
+            <div>
+                <button class="btn-accion btn-peligro" id="btnReiniciar">Reiniciar Partida</button>
+                <button class="btn-accion" id="btnFullscreen">Pantalla Completa</button>
+            </div>
+        </div>
+        <div class="tablero" id="tablero">
+            </div>
+    </div>
 
-    <button class="btn-salida" onclick="procesar('salida')">Pase por Salida (+ 2M)</button>
-    
-    <hr>
-    
-    <div class="seccion-titulo">Monto de la Transacción</div>
-    <input type="text" id="montoInput" placeholder="Ej: 1.5, 2 o 500K">
-    
-    <button class="btn-pagar" onclick="procesar('pagar_banco')">Pagar al Banco (-)</button>
-    <button class="btn-cobrar" onclick="procesar('cobrar_banco')">Cobrar del Banco (+)</button>
-
-    <hr>
-
-    <div class="seccion-titulo">Pagar Renta a Jugador</div>
-    <select id="destinoSelect">
-        <option value="">Selecciona a quién pagar...</option>
-        </select>
-    <button class="btn-transferir" onclick="procesar('transferir')">Hacer Transferencia</button>
-    <button class="btn-todos" onclick="procesar('pagar_todos')">Pagar a TODOS</button>
+    <div class="panel-derecho">
+        <h3>Últimos Movimientos</h3>
+        <div id="historial"></div>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getDatabase, ref, get, update, push, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+        import { getDatabase, ref, onValue, set, push } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
+        // Tu configuración de Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyAXwEe_UM2tVwS3qm_SUoIO_jgBPw8mkCM",
             authDomain: "monopolysaava.firebaseapp.com",
@@ -63,13 +65,7 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
-
-        // Identificar qué jugador soy por la URL (?id=1)
-        const params = new URLSearchParams(window.location.search);
-        const miId = parseInt(params.get('id')) || 1;
-
-        const colores = { 1: '#e74c3c', 2: '#3498db', 3: '#2ecc71', 4: '#f1c40f', 5: '#9b59b6', 6: '#e67e22' };
-        document.getElementById('headerJugador').style.backgroundColor = colores[miId];
+        let estadoLocalJugadores = {};
 
         function formatearMoneda(numero) {
             if (numero >= 1000000) return (numero / 1000000) + ' M';
@@ -78,106 +74,77 @@
             return numero.toLocaleString('es-MX');
         }
 
-        function interpretarEntrada(texto) {
-            const txt = String(texto).trim().toUpperCase();
-            if (txt === "") return 0;
-            if (txt.endsWith('K')) return parseFloat(txt) * 1000;
-            if (txt.endsWith('M')) return parseFloat(txt) * 1000000;
-            const valor = parseFloat(txt);
-            return isNaN(valor) ? 0 : valor * 1000000;
-        }
-
-        // Mantener actualizado mi saldo y el select de jugadores
+        // Dibuja el tablero escuchando los datos en tiempo real
         onValue(ref(db, 'jugadores'), (snapshot) => {
-            const jugadores = snapshot.val();
-            if (jugadores && jugadores[miId]) {
-                const yo = jugadores[miId];
-                document.getElementById('headerJugador').textContent = yo.nombre;
-                document.getElementById('miSaldo').textContent = formatearMoneda(yo.saldo);
-
-                const select = document.getElementById('destinoSelect');
-                const valorSeleccionado = select.value; // Guardar selección actual
-                select.innerHTML = '<option value="">Selecciona a quién pagar...</option>';
+            const datos = snapshot.val();
+            if (datos) {
+                estadoLocalJugadores = datos;
+                document.getElementById('tablero').innerHTML = '';
                 
                 for (let i = 1; i <= 6; i++) {
-                    if (i !== miId && jugadores[i]) {
-                        const opt = document.createElement('option');
-                        opt.value = i;
-                        opt.textContent = jugadores[i].nombre;
-                        select.appendChild(opt);
-                    }
+                    const j = datos[i];
+                    if (!j) continue;
+
+                    const tarjeta = document.createElement('div');
+                    tarjeta.className = 'tarjeta-jugador';
+                    tarjeta.id = `jugador-${i}`;
+
+                    tarjeta.innerHTML = `
+                        <div>
+                            <input type="text" class="nombre-input" id="nombre-${i}" value="${j.nombre}" placeholder="Jugador ${i}">
+                            <div class="saldo-display">${formatearMoneda(j.saldo)}</div>
+                            <div class="qr-hint">Celular ID: <strong>${i}</strong></div>
+                        </div>
+                    `;
+                    document.getElementById('tablero').appendChild(tarjeta);
+
+                    // Si cambias el nombre en la PC, se guarda en la nube al instante
+                    document.getElementById(`nombre-${i}`).addEventListener('change', (e) => {
+                        set(ref(db, `jugadores/${i}/nombre`), e.target.value);
+                    });
                 }
-                select.value = valorSeleccionado; // Restaurar selección
+            } else {
+                // Si no hay datos, inicializamos
+                reiniciarBaseDeDatos();
             }
         });
 
-        window.procesar = async function(tipo) {
-            const montoTexto = document.getElementById('montoInput').value;
-            const monto = interpretarEntrada(montoTexto);
+        // Escuchar el historial en tiempo real
+        onValue(ref(db, 'historial'), (snapshot) => {
+            const historialContainer = document.getElementById('historial');
+            historialContainer.innerHTML = '';
+            const registros = [];
+            snapshot.forEach((child) => { registros.push(child.val()); });
             
-            if (monto <= 0 && tipo !== 'salida') return alert("Ingresa un monto válido");
+            registros.reverse().forEach(reg => {
+                const div = document.createElement('div');
+                div.className = 'registro';
+                div.innerHTML = reg;
+                historialContainer.appendChild(div);
+            });
+        });
 
-            // Congelar botones para evitar doble clic
-            const botones = document.querySelectorAll('button');
-            botones.forEach(b => b.disabled = true);
-
-            try {
-                const snapshot = await get(ref(db, 'jugadores'));
-                const jugadores = snapshot.val();
-                const yo = jugadores[miId];
+        window.reiniciarBaseDeDatos = function() {
+            if(confirm("¿Seguro que quieres reiniciar a todos con 15 Millones? El historial se limpiará.")) {
+                const estadoInicial = {};
+                for (let i = 1; i <= 6; i++) {
+                    const nombreActual = estadoLocalJugadores[i] ? estadoLocalJugadores[i].nombre : `Jugador ${i}`;
+                    estadoInicial[i] = { nombre: nombreActual, saldo: 15000000 };
+                }
                 
-                let updates = {};
-                let logMsg = "";
+                set(ref(db, 'jugadores'), estadoInicial);
+                set(ref(db, 'historial'), null);
+                
                 const hora = new Date().toLocaleTimeString('es-MX', {hour: '2-digit', minute:'2-digit'});
-
-                if (tipo === 'salida') {
-                    updates[`jugadores/${miId}/saldo`] = yo.saldo + 2000000;
-                    logMsg = `<strong>[${hora}] ${yo.nombre}:</strong><br> Cobró la Salida <strong>+ 2 M</strong>`;
-                } 
-                else if (tipo === 'pagar_banco') {
-                    updates[`jugadores/${miId}/saldo`] = yo.saldo - monto;
-                    logMsg = `<strong>[${hora}] ${yo.nombre}:</strong><br> Pagó al Banco <strong>- ${formatearMoneda(monto)}</strong>`;
-                } 
-                else if (tipo === 'cobrar_banco') {
-                    updates[`jugadores/${miId}/saldo`] = yo.saldo + monto;
-                    logMsg = `<strong>[${hora}] ${yo.nombre}:</strong><br> Cobró del Banco <strong>+ ${formatearMoneda(monto)}</strong>`;
-                } 
-                else if (tipo === 'transferir') {
-                    const idDestino = parseInt(document.getElementById('destinoSelect').value);
-                    if (!idDestino) throw new Error("Selecciona a un jugador");
-                    
-                    const dest = jugadores[idDestino];
-                    updates[`jugadores/${miId}/saldo`] = yo.saldo - monto;
-                    updates[`jugadores/${idDestino}/saldo`] = dest.saldo + monto;
-                    logMsg = `<strong>[${hora}] ${yo.nombre}:</strong><br> Pagó a ${dest.nombre} <strong>${formatearMoneda(monto)}</strong>`;
-                }
-                else if (tipo === 'pagar_todos') {
-                    const total = monto * 5;
-                    if (!confirm(`Pagarás ${formatearMoneda(monto)} a TODOS los demás (Total: ${formatearMoneda(total)}). ¿Confirmas?`)) throw new Error("Cancelado");
-                    
-                    updates[`jugadores/${miId}/saldo`] = yo.saldo - total;
-                    for (let i = 1; i <= 6; i++) {
-                        if (i !== miId) updates[`jugadores/${i}/saldo`] = jugadores[i].saldo + monto;
-                    }
-                    logMsg = `<strong>[${hora}] ${yo.nombre}:</strong><br> Pagó a TODOS <strong>${formatearMoneda(monto)} c/u</strong>`;
-                }
-
-                // Subir todos los cambios de saldo a Firebase al mismo tiempo
-                await update(ref(db), updates);
-                // Subir el registro al historial
-                await push(ref(db, 'historial'), logMsg);
-                
-                // Limpiar inputs si todo salió bien
-                document.getElementById('montoInput').value = '';
-                if(navigator.vibrate) navigator.vibrate(50);
-
-            } catch (error) {
-                if (error.message !== "Cancelado") alert(error.message);
-            } finally {
-                // Descongelar botones
-                botones.forEach(b => b.disabled = false);
+                push(ref(db, 'historial'), `<strong>[${hora}] SISTEMA:</strong> Partida iniciada a 15 M.`);
             }
         }
+
+        document.getElementById('btnReiniciar').addEventListener('click', reiniciarBaseDeDatos);
+        document.getElementById('btnFullscreen').addEventListener('click', () => {
+            if (!document.fullscreenElement) { document.documentElement.requestFullscreen(); } 
+            else { document.exitFullscreen(); }
+        });
     </script>
 </body>
 </html>
