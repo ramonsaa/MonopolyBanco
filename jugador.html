@@ -9,7 +9,7 @@
         
         .header { width: 100%; text-align: center; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 24px; font-weight: bold; box-sizing: border-box; transition: background-color 0.3s; }
         
-        .saldo-actual { font-size: 36px; margin-bottom: 20px; color: #2ecc71; font-weight: bold; text-align: center; transition: all 0.3s ease; }
+        .saldo-actual { font-size: 36px; margin-bottom: 20px; color: #2ecc71; font-weight: bold; text-align: center; transition: color 0.3s ease; }
         .inactivo-msg { color: #e74c3c; font-size: 20px; display: none; margin-bottom: 20px; font-weight: bold; text-align: center; }
         input, select, button { width: 100%; max-width: 400px; padding: 15px; margin-bottom: 12px; font-size: 18px; border-radius: 8px; border: none; box-sizing: border-box; text-align: center; }
         input:focus, select:focus { outline: none; border: 2px solid #3498db; }
@@ -25,18 +25,7 @@
         .registro { padding: 8px 0; border-bottom: 1px solid #34495e; line-height: 1.4; }
         .registro:last-child { border-bottom: none; }
 
-        /* --- NUEVOS EFECTOS SÚPER MAGNATE (> 25M) --- */
-        @keyframes textoMagnate {
-            0% { text-shadow: 0 0 10px #f1c40f; transform: scale(1); }
-            50% { text-shadow: 0 0 25px #f1c40f, 0 0 40px #e67e22; transform: scale(1.15); }
-            100% { text-shadow: 0 0 10px #f1c40f; transform: scale(1); }
-        }
-        .es-magnate { 
-            animation: textoMagnate 1.5s infinite alternate; 
-            color: #f1c40f !important; 
-            font-size: 42px; 
-        }
-
+        /* --- FONDO DORADO PARA EL MAGNATE --- */
         .gold-glow-container { position: fixed; top: 50%; left: 50%; width: 1px; height: 1px; transform: translate(-50%, -50%); box-shadow: 0 0 100vw 50vw rgba(241, 196, 15, 0); z-index: -1; transition: box-shadow 0.3s ease; }
         @keyframes pulseGoldGlow { 
             0% { box-shadow: 0 0 100vw 60vw rgba(241, 196, 15, 0.3); } 
@@ -44,6 +33,9 @@
             100% { box-shadow: 0 0 100vw 60vw rgba(241, 196, 15, 0.3); } 
         }
         .gold-glow-container.gold-glow-active { animation: pulseGoldGlow 3s infinite ease-in-out; }
+        
+        .corona-icono { font-size: 28px; display: block; margin-bottom: -5px; animation: flotar 2s infinite ease-in-out;}
+        @keyframes flotar { 0% { transform: translateY(0); } 50% { transform: translateY(-5px); } 100% { transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -144,19 +136,19 @@
                     document.getElementById('msgInactivo').style.display = 'none';
                     const saldoElement = document.getElementById('miSaldo');
                     saldoElement.style.display = 'block';
-                    saldoElement.textContent = formatearMoneda(yo.saldo);
                     
                     if (saldoAnterior !== null && yo.saldo > saldoAnterior) {
                         sonidoDinero.play().catch(e => console.log("Toca la pantalla para audio"));
                     }
                     saldoAnterior = yo.saldo; 
                     
-                    // --- NUEVA LÓGICA DE ESTILOS MAGNATE ---
+                    // --- CORONA Y COLORES ---
                     if (yo.saldo >= 25000000) {
-                        saldoElement.classList.add('es-magnate');
+                        saldoElement.innerHTML = `<span class="corona-icono">👑</span>${formatearMoneda(yo.saldo)}`;
+                        saldoElement.style.color = '#f1c40f';
                         glowContainer.classList.add('gold-glow-active'); 
                     } else {
-                        saldoElement.classList.remove('es-magnate');
+                        saldoElement.innerHTML = formatearMoneda(yo.saldo);
                         glowContainer.classList.remove('gold-glow-active');
                         if (yo.saldo > 10000000) { saldoElement.style.color = '#2ecc71'; } 
                         else if (yo.saldo > 5000000) { saldoElement.style.color = '#f39c12'; } 
@@ -217,7 +209,7 @@
                     }
                 }
 
-                // --- NUEVO BLOQUEO ESTRICTO DE FONDOS ---
+                // Bloqueo estricto
                 if (yo.saldo < monto && tipo !== 'pagar_todos') {
                     alert(`❌ ¡Fondos insuficientes!\nTienes ${formatearMoneda(yo.saldo)} y necesitas pagar ${formatearMoneda(monto)}.`);
                     throw new Error("Cancelado");
@@ -245,7 +237,6 @@
                     
                     const total = monto * idsActivos.length;
                     
-                    // Bloqueo estricto para pagos grupales
                     if (yo.saldo < total) {
                         alert(`❌ ¡Bancarrota inminente!\nPagar a todos cuesta ${formatearMoneda(total)} y solo tienes ${formatearMoneda(yo.saldo)}.`);
                         throw new Error("Cancelado");
