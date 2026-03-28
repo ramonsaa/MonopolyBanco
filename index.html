@@ -22,7 +22,9 @@
         
         .nombre-input { width: 100%; font-size: 18px; font-weight: bold; text-align: center; border: none; border-bottom: 2px dashed #bdc3c7; margin-bottom: 5px; padding: 5px; color: #2c3e50; background: transparent; box-sizing: border-box; }
         .nombre-input:focus { outline: none; border-bottom-color: #34495e; }
-        .saldo-display { font-size: 32px; font-weight: bold; color: #27ae60; margin: 5px 0; }
+        
+        /* Quitamos el color fijo de aquí para que lo controle JavaScript */
+        .saldo-display { font-size: 32px; font-weight: bold; margin: 5px 0; }
         
         /* Controles del Banquero */
         .controles-banco { background-color: #f8f9fa; padding: 8px; border-radius: 6px; border: 1px solid #ecf0f1; }
@@ -30,8 +32,8 @@
         .btn-salida-banco, .btn-estado { color: white; border: none; padding: 6px; font-size: 12px; font-weight: bold; border-radius: 4px; cursor: pointer; flex: 1; }
         .btn-salida-banco { background-color: #f39c12; }
         .btn-salida-banco:hover { background-color: #d68910; }
-        .btn-estado { background-color: #7f8c8d; } /* Gris para desactivar */
-        .btn-estado.reactivar { background-color: #27ae60; } /* Verde para reactivar */
+        .btn-estado { background-color: #7f8c8d; } 
+        .btn-estado.reactivar { background-color: #27ae60; } 
 
         .monto-input-banco { width: 100%; padding: 6px; font-size: 13px; border: 1px solid #bdc3c7; border-radius: 4px; box-sizing: border-box; margin-bottom: 6px; text-align: center; }
         .btn-quitar, .btn-dar { flex: 1; padding: 6px; color: white; border: none; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; }
@@ -66,7 +68,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getDatabase, ref, onValue, set, push, get, update } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
-        // Tu configuración de Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyAXwEe_UM2tVwS3qm_SUoIO_jgBPw8mkCM",
             authDomain: "monopolysaava.firebaseapp.com",
@@ -97,7 +98,6 @@
             return isNaN(valor) ? 0 : valor * 1000000;
         }
 
-        // Dibuja el tablero escuchando los datos en tiempo real
         onValue(ref(db, 'jugadores'), (snapshot) => {
             const datos = snapshot.val();
             if (datos) {
@@ -108,11 +108,20 @@
                     const j = datos[i];
                     if (!j) continue;
 
-                    // Validar si el jugador está activo (por defecto true si no existe la propiedad)
                     const isActivo = j.activo !== false;
                     const opacidadInfo = isActivo ? '1' : '0.4';
                     const textoBotonEstado = isActivo ? 'Desactivar' : 'Reactivar';
                     const claseBotonEstado = isActivo ? 'btn-estado' : 'btn-estado reactivar';
+
+                    // --- LÓGICA DE COLORES AGREGADA AL TABLERO ---
+                    let colorSaldo = '#e74c3c'; // Rojo por defecto (<= 5M)
+                    if (j.saldo >= 25000000) {
+                        colorSaldo = '#f1c40f'; // Dorado
+                    } else if (j.saldo > 10000000) {
+                        colorSaldo = '#2ecc71'; // Verde
+                    } else if (j.saldo > 5000000) {
+                        colorSaldo = '#f39c12'; // Naranja
+                    }
 
                     const tarjeta = document.createElement('div');
                     tarjeta.className = 'tarjeta-jugador';
@@ -121,7 +130,7 @@
                     tarjeta.innerHTML = `
                         <div style="opacity: ${opacidadInfo}; transition: 0.3s; pointer-events: ${isActivo ? 'auto' : 'none'};">
                             <input type="text" class="nombre-input" id="nombre-${i}" value="${j.nombre}" placeholder="Jugador ${i}">
-                            <div class="saldo-display">${formatearMoneda(j.saldo)}</div>
+                            <div class="saldo-display" style="color: ${colorSaldo}; transition: color 0.3s ease;">${formatearMoneda(j.saldo)}</div>
                         </div>
                         <div class="controles-banco">
                             <div class="titulo-banco">🏦 Acción del Banco</div>
@@ -149,7 +158,6 @@
             }
         });
 
-        // FUNCIONES DE CONTROL DEL BANCO
         window.procesarBanco = async function(accion, idJugador) {
             const input = document.getElementById(`monto-banco-${idJugador}`);
             let monto = 0;
@@ -191,7 +199,6 @@
             }
         };
 
-        // Escuchar el historial en tiempo real
         onValue(ref(db, 'historial'), (snapshot) => {
             const historialContainer = document.getElementById('historial');
             historialContainer.innerHTML = '';
@@ -206,13 +213,11 @@
             });
         });
 
-        // Botón de Reinicio
         window.reiniciarBaseDeDatos = function() {
             if(confirm("¿Seguro que quieres reiniciar a todos con 15 Millones? El historial se limpiará.")) {
                 const estadoInicial = {};
                 for (let i = 1; i <= 6; i++) {
                     const nombreActual = estadoLocalJugadores[i] ? estadoLocalJugadores[i].nombre : `Jugador ${i}`;
-                    // Inicializamos explícitamente a todos como activos (true)
                     estadoInicial[i] = { nombre: nombreActual, saldo: 15000000, activo: true };
                 }
                 
