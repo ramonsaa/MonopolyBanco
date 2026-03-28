@@ -22,8 +22,6 @@
         
         .nombre-input { width: 100%; font-size: 18px; font-weight: bold; text-align: center; border: none; border-bottom: 2px dashed #bdc3c7; margin-bottom: 5px; padding: 5px; color: #2c3e50; background: transparent; box-sizing: border-box; }
         .nombre-input:focus { outline: none; border-bottom-color: #34495e; }
-        
-        /* Quitamos el color fijo de aquí para que lo controle JavaScript */
         .saldo-display { font-size: 32px; font-weight: bold; margin: 5px 0; }
         
         /* Controles del Banquero */
@@ -68,6 +66,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getDatabase, ref, onValue, set, push, get, update } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
+        // Tu configuración de Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyAXwEe_UM2tVwS3qm_SUoIO_jgBPw8mkCM",
             authDomain: "monopolysaava.firebaseapp.com",
@@ -98,6 +97,7 @@
             return isNaN(valor) ? 0 : valor * 1000000;
         }
 
+        // Dibuja el tablero escuchando los datos en tiempo real
         onValue(ref(db, 'jugadores'), (snapshot) => {
             const datos = snapshot.val();
             if (datos) {
@@ -113,7 +113,7 @@
                     const textoBotonEstado = isActivo ? 'Desactivar' : 'Reactivar';
                     const claseBotonEstado = isActivo ? 'btn-estado' : 'btn-estado reactivar';
 
-                    // --- LÓGICA DE COLORES AGREGADA AL TABLERO ---
+                    // LÓGICA DE COLORES EN EL BANCO
                     let colorSaldo = '#e74c3c'; // Rojo por defecto (<= 5M)
                     if (j.saldo >= 25000000) {
                         colorSaldo = '#f1c40f'; // Dorado
@@ -154,10 +154,12 @@
                     }
                 }
             } else {
-                reiniciarBaseDeDatos();
+                // SEGURO ANTI-ACCIDENTES: Ya no reinicia automáticamente.
+                document.getElementById('tablero').innerHTML = '<h2 style="color:white; grid-column: span 3; text-align:center; padding-top: 50px;">Base de datos vacía o desconectada.<br>Usa el botón "Reiniciar Partida" para generar los jugadores.</h2>';
             }
         });
 
+        // FUNCIONES DE CONTROL DEL BANCO
         window.procesarBanco = async function(accion, idJugador) {
             const input = document.getElementById(`monto-banco-${idJugador}`);
             let monto = 0;
@@ -199,6 +201,7 @@
             }
         };
 
+        // Escuchar el historial en tiempo real
         onValue(ref(db, 'historial'), (snapshot) => {
             const historialContainer = document.getElementById('historial');
             historialContainer.innerHTML = '';
@@ -213,8 +216,11 @@
             });
         });
 
+        // BOTÓN DE REINICIO CON CANDADO DE SEGURIDAD
         window.reiniciarBaseDeDatos = function() {
-            if(confirm("¿Seguro que quieres reiniciar a todos con 15 Millones? El historial se limpiará.")) {
+            const codigo = prompt("⚠️ PELIGRO ⚠️\nEsto borrará todo el historial y regresará a todos a 15 M.\n\nPara confirmar, escribe la palabra exactamente en mayúsculas: REINICIAR");
+            
+            if (codigo === "REINICIAR") {
                 const estadoInicial = {};
                 for (let i = 1; i <= 6; i++) {
                     const nombreActual = estadoLocalJugadores[i] ? estadoLocalJugadores[i].nombre : `Jugador ${i}`;
@@ -226,6 +232,8 @@
                 
                 const hora = new Date().toLocaleTimeString('es-MX', {hour: '2-digit', minute:'2-digit'});
                 push(ref(db, 'historial'), `<strong>[${hora}] SISTEMA:</strong> Partida iniciada a 15 M.`);
+            } else if (codigo !== null) {
+                alert("Código incorrecto. Reinicio cancelado.");
             }
         }
 
