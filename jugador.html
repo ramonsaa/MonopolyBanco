@@ -7,10 +7,9 @@
     <style>
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #1e272e; color: white; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
         
-        /* Quitamos el color fijo rojo de aquí */
         .header { width: 100%; text-align: center; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 24px; font-weight: bold; box-sizing: border-box; transition: background-color 0.3s; }
         
-        .saldo-actual { font-size: 36px; margin-bottom: 20px; color: #2ecc71; font-weight: bold; text-align: center; transition: color 0.3s ease; }
+        .saldo-actual { font-size: 36px; margin-bottom: 20px; color: #2ecc71; font-weight: bold; text-align: center; transition: all 0.3s ease; }
         .inactivo-msg { color: #e74c3c; font-size: 20px; display: none; margin-bottom: 20px; font-weight: bold; text-align: center; }
         input, select, button { width: 100%; max-width: 400px; padding: 15px; margin-bottom: 12px; font-size: 18px; border-radius: 8px; border: none; box-sizing: border-box; text-align: center; }
         input:focus, select:focus { outline: none; border: 2px solid #3498db; }
@@ -26,9 +25,25 @@
         .registro { padding: 8px 0; border-bottom: 1px solid #34495e; line-height: 1.4; }
         .registro:last-child { border-bottom: none; }
 
+        /* --- NUEVOS EFECTOS SÚPER MAGNATE (> 25M) --- */
+        @keyframes textoMagnate {
+            0% { text-shadow: 0 0 10px #f1c40f; transform: scale(1); }
+            50% { text-shadow: 0 0 25px #f1c40f, 0 0 40px #e67e22; transform: scale(1.15); }
+            100% { text-shadow: 0 0 10px #f1c40f; transform: scale(1); }
+        }
+        .es-magnate { 
+            animation: textoMagnate 1.5s infinite alternate; 
+            color: #f1c40f !important; 
+            font-size: 42px; 
+        }
+
         .gold-glow-container { position: fixed; top: 50%; left: 50%; width: 1px; height: 1px; transform: translate(-50%, -50%); box-shadow: 0 0 100vw 50vw rgba(241, 196, 15, 0); z-index: -1; transition: box-shadow 0.3s ease; }
-        @keyframes pulseGoldGlow { 0% { box-shadow: 0 0 100vw 50vw rgba(241, 196, 15, 0.2); } 50% { box-shadow: 0 0 120vw 60vw rgba(241, 196, 15, 0.6); } 100% { box-shadow: 0 0 100vw 50vw rgba(241, 196, 15, 0.2); } }
-        .gold-glow-container.gold-glow-active { animation: pulseGoldGlow 4s infinite ease-in-out; }
+        @keyframes pulseGoldGlow { 
+            0% { box-shadow: 0 0 100vw 60vw rgba(241, 196, 15, 0.3); } 
+            50% { box-shadow: 0 0 150vw 80vw rgba(241, 196, 15, 0.8), 0 0 50vw 20vw rgba(255, 255, 255, 0.4); } 
+            100% { box-shadow: 0 0 100vw 60vw rgba(241, 196, 15, 0.3); } 
+        }
+        .gold-glow-container.gold-glow-active { animation: pulseGoldGlow 3s infinite ease-in-out; }
     </style>
 </head>
 <body>
@@ -72,11 +87,9 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // --- LÓGICA DE UN SOLO ARCHIVO (Parámetros URL) ---
         const urlParams = new URLSearchParams(window.location.search);
         let miId = parseInt(urlParams.get('id'));
 
-        // Si no hay ID en la URL, preguntamos
         if (!miId || miId < 1 || miId > 6) {
             let respuesta = prompt("¿Qué número de jugador eres? (Del 1 al 6)");
             miId = parseInt(respuesta);
@@ -87,18 +100,11 @@
             }
         }
 
-        // Asignar el color de cabecera según el ID
         const coloresJugadores = {
-            1: '#e74c3c', // Rojo
-            2: '#3498db', // Azul
-            3: '#2ecc71', // Verde
-            4: '#f1c40f', // Amarillo
-            5: '#9b59b6', // Morado
-            6: '#e67e22'  // Naranja
+            1: '#e74c3c', 2: '#3498db', 3: '#2ecc71', 4: '#f1c40f', 5: '#9b59b6', 6: '#e67e22'
         };
         document.getElementById('headerJugador').style.backgroundColor = coloresJugadores[miId] || '#34495e';
         document.title = `Billetera - Jugador ${miId}`;
-        // -------------------------------------------------
 
         const glowContainer = document.getElementById('glowContainer');
         let saldoAnterior = null; 
@@ -145,10 +151,12 @@
                     }
                     saldoAnterior = yo.saldo; 
                     
+                    // --- NUEVA LÓGICA DE ESTILOS MAGNATE ---
                     if (yo.saldo >= 25000000) {
-                        saldoElement.style.color = '#f1c40f'; 
+                        saldoElement.classList.add('es-magnate');
                         glowContainer.classList.add('gold-glow-active'); 
                     } else {
+                        saldoElement.classList.remove('es-magnate');
                         glowContainer.classList.remove('gold-glow-active');
                         if (yo.saldo > 10000000) { saldoElement.style.color = '#2ecc71'; } 
                         else if (yo.saldo > 5000000) { saldoElement.style.color = '#f39c12'; } 
@@ -209,9 +217,10 @@
                     }
                 }
 
+                // --- NUEVO BLOQUEO ESTRICTO DE FONDOS ---
                 if (yo.saldo < monto && tipo !== 'pagar_todos') {
-                    const confirmar = confirm(`No tienes fondos suficientes. Tienes ${formatearMoneda(yo.saldo)} y pagarás ${formatearMoneda(monto)}. ¿Deseas quedar en números rojos?`);
-                    if (!confirmar) throw new Error("Cancelado");
+                    alert(`❌ ¡Fondos insuficientes!\nTienes ${formatearMoneda(yo.saldo)} y necesitas pagar ${formatearMoneda(monto)}.`);
+                    throw new Error("Cancelado");
                 }
 
                 let updates = {};
@@ -236,9 +245,10 @@
                     
                     const total = monto * idsActivos.length;
                     
+                    // Bloqueo estricto para pagos grupales
                     if (yo.saldo < total) {
-                        const confirmar = confirm(`No tienes fondos suficientes. Pagar a los ${idsActivos.length} activos te costará ${formatearMoneda(total)}. ¿Deseas quedar en números rojos?`);
-                        if (!confirmar) throw new Error("Cancelado");
+                        alert(`❌ ¡Bancarrota inminente!\nPagar a todos cuesta ${formatearMoneda(total)} y solo tienes ${formatearMoneda(yo.saldo)}.`);
+                        throw new Error("Cancelado");
                     } else {
                         if (!confirm(`Pagarás ${formatearMoneda(monto)} a los ${idsActivos.length} jugadores activos (Total: ${formatearMoneda(total)}). ¿Confirmas?`)) throw new Error("Cancelado");
                     }
