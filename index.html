@@ -15,7 +15,7 @@
         .btn-peligro:hover { background-color: #922b21; }
         
         .tablero { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); gap: 10px; }
-        .tarjeta-jugador { background-color: #ffffff; padding: 10px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); text-align: center; border-top: 8px solid; display: flex; flex-direction: column; justify-content: space-between; }
+        .tarjeta-jugador { background-color: #ffffff; padding: 10px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); text-align: center; border-top: 8px solid; display: flex; flex-direction: column; justify-content: space-between; transition: 0.3s; }
         
         #jugador-1 { border-top-color: #e74c3c; } #jugador-2 { border-top-color: #3498db; } #jugador-3 { border-top-color: #2ecc71; } 
         #jugador-4 { border-top-color: #f1c40f; } #jugador-5 { border-top-color: #9b59b6; } #jugador-6 { border-top-color: #e67e22; }
@@ -27,8 +27,12 @@
         /* Controles del Banquero */
         .controles-banco { background-color: #f8f9fa; padding: 8px; border-radius: 6px; border: 1px solid #ecf0f1; }
         .titulo-banco { font-size: 11px; text-transform: uppercase; color: #7f8c8d; margin-bottom: 5px; font-weight: bold; }
-        .btn-salida-banco { background-color: #f39c12; color: white; border: none; padding: 6px; width: 100%; font-size: 12px; font-weight: bold; border-radius: 4px; cursor: pointer; margin-bottom: 6px; }
+        .btn-salida-banco, .btn-estado { color: white; border: none; padding: 6px; font-size: 12px; font-weight: bold; border-radius: 4px; cursor: pointer; flex: 1; }
+        .btn-salida-banco { background-color: #f39c12; }
         .btn-salida-banco:hover { background-color: #d68910; }
+        .btn-estado { background-color: #7f8c8d; } /* Gris para desactivar */
+        .btn-estado.reactivar { background-color: #27ae60; } /* Verde para reactivar */
+
         .monto-input-banco { width: 100%; padding: 6px; font-size: 13px; border: 1px solid #bdc3c7; border-radius: 4px; box-sizing: border-box; margin-bottom: 6px; text-align: center; }
         .btn-quitar, .btn-dar { flex: 1; padding: 6px; color: white; border: none; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; }
         .btn-quitar { background-color: #c0392b; }
@@ -60,9 +64,9 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        // Importamos get y update para poder mandar los pagos desde aquí
         import { getDatabase, ref, onValue, set, push, get, update } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
+        // Tu configuración de Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyAXwEe_UM2tVwS3qm_SUoIO_jgBPw8mkCM",
             authDomain: "monopolysaava.firebaseapp.com",
@@ -84,7 +88,6 @@
             return numero.toLocaleString('es-MX');
         }
 
-        // Intérprete para que el banquero pueda escribir 1.5 o 500K
         function interpretarEntrada(texto) {
             const txt = String(texto).trim().toUpperCase();
             if (txt === "") return 0;
@@ -105,56 +108,69 @@
                     const j = datos[i];
                     if (!j) continue;
 
+                    // Validar si el jugador está activo (por defecto true si no existe la propiedad)
+                    const isActivo = j.activo !== false;
+                    const opacidadInfo = isActivo ? '1' : '0.4';
+                    const textoBotonEstado = isActivo ? 'Desactivar' : 'Reactivar';
+                    const claseBotonEstado = isActivo ? 'btn-estado' : 'btn-estado reactivar';
+
                     const tarjeta = document.createElement('div');
                     tarjeta.className = 'tarjeta-jugador';
                     tarjeta.id = `jugador-${i}`;
 
                     tarjeta.innerHTML = `
-                        <div>
+                        <div style="opacity: ${opacidadInfo}; transition: 0.3s; pointer-events: ${isActivo ? 'auto' : 'none'};">
                             <input type="text" class="nombre-input" id="nombre-${i}" value="${j.nombre}" placeholder="Jugador ${i}">
                             <div class="saldo-display">${formatearMoneda(j.saldo)}</div>
                         </div>
                         <div class="controles-banco">
                             <div class="titulo-banco">🏦 Acción del Banco</div>
-                            <button class="btn-salida-banco" onclick="procesarBanco('salida', ${i})">Salida (+ 2M)</button>
-                            <input type="text" class="monto-input-banco" id="monto-banco-${i}" placeholder="Monto (ej. 1.5, 500K)">
+                            <div style="display: flex; gap: 5px; margin-bottom: 6px;">
+                                <button class="btn-salida-banco" onclick="procesarBanco('salida', ${i})" ${!isActivo ? 'disabled' : ''}>Salida</button>
+                                <button class="${claseBotonEstado}" onclick="procesarBanco('toggle_activo', ${i})">${textoBotonEstado}</button>
+                            </div>
+                            <input type="text" class="monto-input-banco" id="monto-banco-${i}" placeholder="Monto" ${!isActivo ? 'disabled' : ''}>
                             <div style="display: flex; gap: 5px;">
-                                <button class="btn-quitar" onclick="procesarBanco('quitar', ${i})">Quitar (-)</button>
-                                <button class="btn-dar" onclick="procesarBanco('dar', ${i})">Dar (+)</button>
+                                <button class="btn-quitar" onclick="procesarBanco('quitar', ${i})" ${!isActivo ? 'disabled' : ''}>Quitar (-)</button>
+                                <button class="btn-dar" onclick="procesarBanco('dar', ${i})" ${!isActivo ? 'disabled' : ''}>Dar (+)</button>
                             </div>
                         </div>
                     `;
                     document.getElementById('tablero').appendChild(tarjeta);
 
-                    document.getElementById(`nombre-${i}`).addEventListener('change', (e) => {
-                        set(ref(db, `jugadores/${i}/nombre`), e.target.value);
-                    });
+                    if (isActivo) {
+                        document.getElementById(`nombre-${i}`).addEventListener('change', (e) => {
+                            set(ref(db, `jugadores/${i}/nombre`), e.target.value);
+                        });
+                    }
                 }
             } else {
                 reiniciarBaseDeDatos();
             }
         });
 
-        // FUNCIONES DE CONTROL DEL BANCO (Globales para que los botones las encuentren)
+        // FUNCIONES DE CONTROL DEL BANCO
         window.procesarBanco = async function(accion, idJugador) {
             const input = document.getElementById(`monto-banco-${idJugador}`);
             let monto = 0;
             
-            if (accion !== 'salida') {
+            if (accion === 'dar' || accion === 'quitar') {
                 monto = interpretarEntrada(input.value);
                 if (monto <= 0) return alert("Ingresa un monto válido");
             }
 
             try {
-                // Traemos el saldo más reciente de la nube
                 const snapshot = await get(ref(db, `jugadores/${idJugador}`));
                 const jugador = snapshot.val();
-                
                 let updates = {};
                 let logMsg = "";
                 const hora = new Date().toLocaleTimeString('es-MX', {hour: '2-digit', minute:'2-digit'});
 
-                if (accion === 'salida') {
+                if (accion === 'toggle_activo') {
+                    const nuevoEstado = !(jugador.activo !== false);
+                    updates[`jugadores/${idJugador}/activo`] = nuevoEstado;
+                    logMsg = `<strong>[${hora}] 🏦 BANCO:</strong><br> ${nuevoEstado ? 'Reactivó a' : 'Dejó fuera a'} ${jugador.nombre}`;
+                } else if (accion === 'salida') {
                     updates[`jugadores/${idJugador}/saldo`] = jugador.saldo + 2000000;
                     logMsg = `<strong>[${hora}] 🏦 BANCO:</strong><br> Le pagó la Salida a ${jugador.nombre} <strong>+ 2 M</strong>`;
                 } else if (accion === 'dar') {
@@ -166,8 +182,7 @@
                 }
 
                 await update(ref(db), updates);
-                await push(ref(db, 'historial'), logMsg);
-                
+                if (logMsg) await push(ref(db, 'historial'), logMsg);
                 if (input) input.value = '';
 
             } catch (error) {
@@ -191,12 +206,14 @@
             });
         });
 
+        // Botón de Reinicio
         window.reiniciarBaseDeDatos = function() {
             if(confirm("¿Seguro que quieres reiniciar a todos con 15 Millones? El historial se limpiará.")) {
                 const estadoInicial = {};
                 for (let i = 1; i <= 6; i++) {
                     const nombreActual = estadoLocalJugadores[i] ? estadoLocalJugadores[i].nombre : `Jugador ${i}`;
-                    estadoInicial[i] = { nombre: nombreActual, saldo: 15000000 };
+                    // Inicializamos explícitamente a todos como activos (true)
+                    estadoInicial[i] = { nombre: nombreActual, saldo: 15000000, activo: true };
                 }
                 
                 set(ref(db, 'jugadores'), estadoInicial);
