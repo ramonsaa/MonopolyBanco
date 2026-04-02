@@ -7,7 +7,8 @@
     <style>
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #1e272e; color: white; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
         
-        .header { width: 100%; text-align: center; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 24px; font-weight: bold; box-sizing: border-box; transition: background-color 0.3s; }
+        .header { width: 100%; text-align: center; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 24px; font-weight: bold; box-sizing: border-box; transition: background-color 0.3s; position: relative;}
+        .sala-pin-mini { font-size: 12px; font-weight: normal; opacity: 0.8; display: block; margin-top: 5px; letter-spacing: 2px;}
         
         .saldo-actual { font-size: 36px; margin-bottom: 20px; color: #2ecc71; font-weight: bold; text-align: center; transition: color 0.3s ease; }
         .inactivo-msg { color: #e74c3c; font-size: 20px; display: none; margin-bottom: 20px; font-weight: bold; text-align: center; }
@@ -25,7 +26,7 @@
         .registro { padding: 8px 0; border-bottom: 1px solid #34495e; line-height: 1.4; }
         .registro:last-child { border-bottom: none; }
 
-        /* --- FONDO DORADO PARA EL MAGNATE --- */
+        /* EFECTOS MAGNATE */
         .gold-glow-container { position: fixed; top: 50%; left: 50%; width: 1px; height: 1px; transform: translate(-50%, -50%); box-shadow: 0 0 100vw 50vw rgba(241, 196, 15, 0); z-index: -1; transition: box-shadow 0.3s ease; }
         @keyframes pulseGoldGlow { 
             0% { box-shadow: 0 0 100vw 60vw rgba(241, 196, 15, 0.3); } 
@@ -40,7 +41,10 @@
 </head>
 <body>
     <div class="gold-glow-container" id="glowContainer"></div>
-    <div class="header" id="headerJugador">Configurando...</div>
+    <div class="header" id="headerJugador">
+        <span id="nombreMostrado">Configurando...</span>
+        <span class="sala-pin-mini" id="pinMostrado"></span>
+    </div>
     
     <div class="inactivo-msg" id="msgInactivo">🚫 JUGADOR INACTIVO / BANCARROTA 🚫</div>
     <div class="saldo-actual" id="miSaldo">-- M</div>
@@ -79,18 +83,20 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
+        // --- LECTURA DE SALA Y JUGADOR DESDE LA URL ---
         const urlParams = new URLSearchParams(window.location.search);
         let miId = parseInt(urlParams.get('id'));
+        let salaId = urlParams.get('sala');
 
-        if (!miId || miId < 1 || miId > 6) {
-            let respuesta = prompt("¿Qué número de jugador eres? (Del 1 al 6)");
-            miId = parseInt(respuesta);
-            
-            if (!miId || miId < 1 || miId > 6) {
-                document.body.innerHTML = "<h2 style='text-align:center; margin-top:50px;'>Error: Debes elegir un número del 1 al 6. Recarga la página.</h2>";
-                throw new Error("ID de jugador inválido");
-            }
+        // Validación de seguridad: Si falta el PIN o el ID, lo regresamos al Lobby
+        if (!salaId || !miId || miId < 1 || miId > 6) {
+            alert("Error: Faltan datos para entrar a la partida.");
+            window.location.href = "lobby.html";
+            throw new Error("Datos de conexión inválidos");
         }
+
+        salaId = salaId.toUpperCase();
+        document.getElementById('pinMostrado').textContent = `SALA: ${salaId}`;
 
         const coloresJugadores = {
             1: '#e74c3c', 2: '#3498db', 3: '#2ecc71', 4: '#f1c40f', 5: '#9b59b6', 6: '#e67e22'
@@ -118,13 +124,14 @@
             return isNaN(valor) ? 0 : valor * 1000000;
         }
 
-        onValue(ref(db, 'jugadores'), (snapshot) => {
+        // --- CONEXIÓN A LA SALA ESPECÍFICA ---
+        onValue(ref(db, `partidas/${salaId}/jugadores`), (snapshot) => {
             const jugadores = snapshot.val();
             if (jugadores && jugadores[miId]) {
                 const yo = jugadores[miId];
                 const isActivo = yo.activo !== false;
                 
-                document.getElementById('headerJugador').textContent = yo.nombre;
+                document.getElementById('nombreMostrado').textContent = yo.nombre;
 
                 const elementosUI = ['montoInput', 'destinoSelect', 'btnPagar', 'btnTrans', 'btnTodos'];
                 if (!isActivo) {
@@ -142,7 +149,7 @@
                     }
                     saldoAnterior = yo.saldo; 
                     
-                    // --- CORONA Y COLORES ---
+                    // EFECTO CORONA MAGNATE
                     if (yo.saldo >= 25000000) {
                         saldoElement.innerHTML = `<span class="corona-icono">👑</span>${formatearMoneda(yo.saldo)}`;
                         saldoElement.style.color = '#f1c40f';
@@ -158,6 +165,7 @@
                     elementosUI.forEach(id => document.getElementById(id).disabled = false);
                 }
 
+                // LLENAR SELECT DE PAGOS
                 const select = document.getElementById('destinoSelect');
                 const valorSeleccionado = select.value; 
                 select.innerHTML = '<option value="">Selecciona a quién pagar...</option>';
@@ -174,7 +182,8 @@
             }
         });
 
-        onValue(ref(db, 'historial'), (snapshot) => {
+        // HISTORIAL DE LA SALA ESPECÍFICA
+        onValue(ref(db, `partidas/${salaId}/historial`), (snapshot) => {
             const historialContainer = document.getElementById('historialJugador');
             historialContainer.innerHTML = '';
             const registros = [];
@@ -188,6 +197,7 @@
             });
         });
 
+        // PROCESAR PAGOS EN LA SALA ESPECÍFICA
         window.procesar = async function(tipo) {
             const montoTexto = document.getElementById('montoInput').value;
             const monto = interpretarEntrada(montoTexto);
@@ -198,7 +208,7 @@
             botones.forEach(b => b.disabled = true);
 
             try {
-                const snapshot = await get(ref(db, 'jugadores'));
+                const snapshot = await get(ref(db, `partidas/${salaId}/jugadores`));
                 const jugadores = snapshot.val();
                 const yo = jugadores[miId];
                 
@@ -251,8 +261,9 @@
                     logMsg = `<strong>[${hora}] ${yo.nombre}:</strong><br> Pagó a TODOS <strong>${formatearMoneda(monto)} c/u</strong>`;
                 }
 
-                await update(ref(db), updates);
-                await push(ref(db, 'historial'), logMsg);
+                // Actualizamos directamente en la sala
+                await update(ref(db, `partidas/${salaId}`), updates);
+                await push(ref(db, `partidas/${salaId}/historial`), logMsg);
                 
                 document.getElementById('montoInput').value = '';
                 if(navigator.vibrate) navigator.vibrate(50);
