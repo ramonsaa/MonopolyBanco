@@ -2,246 +2,136 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Banco Monopoly - Pantalla Principal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bancopoly - Lobby</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #1e272e; margin: 0; padding: 0; display: flex; height: 100vh; overflow: hidden; color: #333; }
-        .panel-izquierdo { flex: 3; display: flex; flex-direction: column; padding: 15px; box-sizing: border-box; height: 100%; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .header h1 { color: white; margin: 0; font-size: 24px; }
-        .btn-accion-top { background-color: #34495e; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-left: 10px; transition: 0.2s;}
-        .btn-accion-top:hover { background-color: #2c3e50; }
-        .btn-peligro { background-color: #c0392b; }
-        .btn-peligro:hover { background-color: #922b21; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #1e272e; color: white; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
         
-        .tablero { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); gap: 10px; }
-        .tarjeta-jugador { background-color: #ffffff; padding: 10px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); text-align: center; border-top: 8px solid; display: flex; flex-direction: column; justify-content: space-between; transition: 0.3s; }
-        
-        #jugador-1 { border-top-color: #e74c3c; } #jugador-2 { border-top-color: #3498db; } #jugador-3 { border-top-color: #2ecc71; } 
-        #jugador-4 { border-top-color: #f1c40f; } #jugador-5 { border-top-color: #9b59b6; } #jugador-6 { border-top-color: #e67e22; }
-        
-        .nombre-input { width: 100%; font-size: 18px; font-weight: bold; text-align: center; border: none; border-bottom: 2px dashed #bdc3c7; margin-bottom: 5px; padding: 5px; color: #2c3e50; background: transparent; box-sizing: border-box; }
-        .nombre-input:focus { outline: none; border-bottom-color: #34495e; }
-        .saldo-display { font-size: 32px; font-weight: bold; margin: 5px 0; }
-        
-        /* Controles del Banquero */
-        .controles-banco { background-color: #f8f9fa; padding: 8px; border-radius: 6px; border: 1px solid #ecf0f1; }
-        .titulo-banco { font-size: 11px; text-transform: uppercase; color: #7f8c8d; margin-bottom: 5px; font-weight: bold; }
-        .btn-salida-banco, .btn-estado { color: white; border: none; padding: 6px; font-size: 12px; font-weight: bold; border-radius: 4px; cursor: pointer; flex: 1; }
-        .btn-salida-banco { background-color: #f39c12; }
-        .btn-salida-banco:hover { background-color: #d68910; }
-        .btn-estado { background-color: #7f8c8d; } 
-        .btn-estado.reactivar { background-color: #27ae60; } 
+        /* LOGO Y ENCABEZADO */
+        .logo-container { text-align: center; margin-bottom: 30px; margin-top: 20px; }
+        .logo-icono { font-size: 50px; margin-bottom: -10px; display: block; }
+        .logo-texto { font-size: 32px; font-weight: bold; margin: 0; letter-spacing: 2px; }
+        .logo-sub { color: #bdc3c7; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
 
-        .monto-input-banco { width: 100%; padding: 6px; font-size: 13px; border: 1px solid #bdc3c7; border-radius: 4px; box-sizing: border-box; margin-bottom: 6px; text-align: center; }
-        .btn-quitar, .btn-dar { flex: 1; padding: 6px; color: white; border: none; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; }
-        .btn-quitar { background-color: #c0392b; }
-        .btn-dar { background-color: #27ae60; }
+        /* TARJETAS DE SECCIÓN */
+        .card { background-color: #2c3e50; width: 100%; max-width: 400px; border-radius: 12px; padding: 20px; box-sizing: border-box; margin-bottom: 20px; box-shadow: 0 8px 16px rgba(0,0,0,0.2); }
+        .card-titulo { font-size: 18px; color: #ecf0f1; border-bottom: 2px solid #34495e; padding-bottom: 10px; margin-top: 0; margin-bottom: 15px; text-align: center; font-weight: bold; }
 
-        .panel-derecho { flex: 1; background-color: #ffffff; height: 100%; padding: 15px; box-sizing: border-box; overflow-y: auto; border-left: 2px solid #2c3e50; }
-        .panel-derecho h3 { margin-top: 0; color: #2c3e50; font-size: 18px; text-align: center; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; position: sticky; top: 0; background-color: white; }
-        .registro { font-size: 13px; padding: 8px 0; border-bottom: 1px solid #ecf0f1; line-height: 1.4; }
+        /* INPUTS Y BOTONES */
+        input, select, button { width: 100%; padding: 14px; margin-bottom: 15px; font-size: 16px; border-radius: 8px; border: none; box-sizing: border-box; text-align: center; }
+        input:focus, select:focus { outline: none; border: 2px solid #3498db; background-color: #f8f9fa; }
+        input { background-color: #ecf0f1; color: #2c3e50; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
+        select { background-color: #ecf0f1; color: #2c3e50; font-weight: bold; cursor: pointer; }
+        
+        .btn-unirse { background-color: #2ecc71; color: white; font-weight: bold; font-size: 18px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 0 #27ae60; }
+        .btn-unirse:active { transform: translateY(4px); box-shadow: none; }
+        
+        .btn-crear { background-color: #3498db; color: white; font-weight: bold; font-size: 18px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 0 #2980b9; }
+        .btn-crear:active { transform: translateY(4px); box-shadow: none; }
+
+        /* SECCIÓN PREMIUM */
+        .premium-banner { background: linear-gradient(135deg, #f39c12, #d35400); padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 15px; }
+        .premium-texto { font-size: 14px; font-weight: bold; margin-bottom: 10px; }
+        .btn-premium { background-color: #1e272e; color: #f1c40f; font-weight: bold; font-size: 14px; padding: 10px; margin: 0; border: 1px solid #f1c40f; cursor: pointer; }
+
+        .opcion-bloqueada { color: #7f8c8d; font-style: italic; }
+        .badge-gratis { background-color: #95a5a6; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; vertical-align: middle; margin-left: 5px; }
     </style>
 </head>
 <body>
 
-    <div class="panel-izquierdo">
-        <div class="header">
-            <h1>Tablero Principal Monopoly</h1>
-            <div>
-                <button class="btn-accion-top btn-peligro" id="btnReiniciar">Reiniciar Partida</button>
-                <button class="btn-accion-top" id="btnFullscreen">Pantalla Completa</button>
-            </div>
+    <div class="logo-container">
+        <span class="logo-icono">🎩</span>
+        <h1 class="logo-texto">BANCOPOLY</h1>
+        <div class="logo-sub">Billetera Digital</div>
+    </div>
+
+    <div class="card">
+        <h2 class="card-titulo">Entrar a una Partida</h2>
+        <input type="text" id="pinSala" placeholder="PIN DE LA SALA (Ej. A7B9Q)" maxlength="5">
+        <select id="numeroJugador">
+            <option value="">¿Qué jugador eres?</option>
+            <option value="1">Jugador 1 (Rojo)</option>
+            <option value="2">Jugador 2 (Azul)</option>
+            <option value="3">Jugador 3 (Verde)</option>
+            <option value="4">Jugador 4 (Amarillo)</option>
+            <option value="5">Jugador 5 (Morado)</option>
+            <option value="6">Jugador 6 (Naranja)</option>
+        </select>
+        <button class="btn-unirse" onclick="unirsePartida()">Entrar a Jugar</button>
+    </div>
+
+    <div class="card">
+        <h2 class="card-titulo">Crear Nueva Partida</h2>
+        
+        <select id="tipoJuego">
+            <option value="millonario">Monopoly Millonario (15M)</option>
+            <option value="clasico">Monopoly Clásico ($1,500)</option>
+            <option value="turista" class="opcion-bloqueada" disabled>Turista Mundial ($150,000) 🔒 PRO</option>
+            <option value="custom" class="opcion-bloqueada" disabled>Cantidades Personalizadas 🔒 PRO</option>
+        </select>
+
+        <select id="capacidadJugadores">
+            <option value="4">Hasta 4 Jugadores (Versión Gratis)</option>
+            <option value="6" class="opcion-bloqueada" disabled>Hasta 6 Jugadores 🔒 PRO</option>
+        </select>
+
+        <div class="premium-banner">
+            <div class="premium-texto">👑 Desbloquea el modo VIP para 6 jugadores, efectos dorados y más plantillas.</div>
+            <button class="btn-premium">Desbloquear PRO por $49 MXN</button>
         </div>
-        <div class="tablero" id="tablero">
-            </div>
+
+        <button class="btn-crear" onclick="crearPartida()">Crear y ser Banquero</button>
     </div>
 
-    <div class="panel-derecho">
-        <h3>Últimos Movimientos</h3>
-        <div id="historial"></div>
-    </div>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getDatabase, ref, onValue, set, push, get, update } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
-
-        // Tu configuración de Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyAXwEe_UM2tVwS3qm_SUoIO_jgBPw8mkCM",
-            authDomain: "monopolysaava.firebaseapp.com",
-            databaseURL: "https://monopolysaava-default-rtdb.firebaseio.com",
-            projectId: "monopolysaava",
-            storageBucket: "monopolysaava.firebasestorage.app",
-            messagingSenderId: "812339314745",
-            appId: "1:812339314745:web:a8b330d12b310dd4514de8"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-        let estadoLocalJugadores = {};
-
-        function formatearMoneda(numero) {
-            if (numero >= 1000000) return (numero / 1000000) + ' M';
-            if (numero >= 1000) return (numero / 1000) + ' K';
-            if (numero === 0) return '0';
-            return numero.toLocaleString('es-MX');
-        }
-
-        function interpretarEntrada(texto) {
-            const txt = String(texto).trim().toUpperCase();
-            if (txt === "") return 0;
-            if (txt.endsWith('K')) return parseFloat(txt) * 1000;
-            if (txt.endsWith('M')) return parseFloat(txt) * 1000000;
-            const valor = parseFloat(txt);
-            return isNaN(valor) ? 0 : valor * 1000000;
-        }
-
-        // Dibuja el tablero escuchando los datos en tiempo real
-        onValue(ref(db, 'jugadores'), (snapshot) => {
-            const datos = snapshot.val();
-            if (datos) {
-                estadoLocalJugadores = datos;
-                document.getElementById('tablero').innerHTML = '';
-                
-                for (let i = 1; i <= 6; i++) {
-                    const j = datos[i];
-                    if (!j) continue;
-
-                    const isActivo = j.activo !== false;
-                    const opacidadInfo = isActivo ? '1' : '0.4';
-                    const textoBotonEstado = isActivo ? 'Desactivar' : 'Reactivar';
-                    const claseBotonEstado = isActivo ? 'btn-estado' : 'btn-estado reactivar';
-
-                    // LÓGICA DE COLORES EN EL BANCO
-                    let colorSaldo = '#e74c3c'; // Rojo por defecto (<= 5M)
-                    if (j.saldo >= 25000000) {
-                        colorSaldo = '#f1c40f'; // Dorado
-                    } else if (j.saldo > 10000000) {
-                        colorSaldo = '#2ecc71'; // Verde
-                    } else if (j.saldo > 5000000) {
-                        colorSaldo = '#f39c12'; // Naranja
-                    }
-
-                    const tarjeta = document.createElement('div');
-                    tarjeta.className = 'tarjeta-jugador';
-                    tarjeta.id = `jugador-${i}`;
-
-                    tarjeta.innerHTML = `
-                        <div style="opacity: ${opacidadInfo}; transition: 0.3s; pointer-events: ${isActivo ? 'auto' : 'none'};">
-                            <input type="text" class="nombre-input" id="nombre-${i}" value="${j.nombre}" placeholder="Jugador ${i}">
-                            <div class="saldo-display" style="color: ${colorSaldo}; transition: color 0.3s ease;">${formatearMoneda(j.saldo)}</div>
-                        </div>
-                        <div class="controles-banco">
-                            <div class="titulo-banco">🏦 Acción del Banco</div>
-                            <div style="display: flex; gap: 5px; margin-bottom: 6px;">
-                                <button class="btn-salida-banco" onclick="procesarBanco('salida', ${i})" ${!isActivo ? 'disabled' : ''}>Salida</button>
-                                <button class="${claseBotonEstado}" onclick="procesarBanco('toggle_activo', ${i})">${textoBotonEstado}</button>
-                            </div>
-                            <input type="text" class="monto-input-banco" id="monto-banco-${i}" placeholder="Monto" ${!isActivo ? 'disabled' : ''}>
-                            <div style="display: flex; gap: 5px;">
-                                <button class="btn-quitar" onclick="procesarBanco('quitar', ${i})" ${!isActivo ? 'disabled' : ''}>Quitar (-)</button>
-                                <button class="btn-dar" onclick="procesarBanco('dar', ${i})" ${!isActivo ? 'disabled' : ''}>Dar (+)</button>
-                            </div>
-                        </div>
-                    `;
-                    document.getElementById('tablero').appendChild(tarjeta);
-
-                    if (isActivo) {
-                        document.getElementById(`nombre-${i}`).addEventListener('change', (e) => {
-                            set(ref(db, `jugadores/${i}/nombre`), e.target.value);
-                        });
-                    }
-                }
-            } else {
-                // SEGURO ANTI-ACCIDENTES: Ya no reinicia automáticamente.
-                document.getElementById('tablero').innerHTML = '<h2 style="color:white; grid-column: span 3; text-align:center; padding-top: 50px;">Base de datos vacía o desconectada.<br>Usa el botón "Reiniciar Partida" para generar los jugadores.</h2>';
-            }
-        });
-
-        // FUNCIONES DE CONTROL DEL BANCO
-        window.procesarBanco = async function(accion, idJugador) {
-            const input = document.getElementById(`monto-banco-${idJugador}`);
-            let monto = 0;
+    <script>
+        // --- REVISIÓN DE MEMORIA (El truco del localStorage) ---
+        // Apenas carga la página, revisamos si el usuario se había salido por accidente
+        window.onload = function() {
+            const salaGuardada = localStorage.getItem('miSalaActiva');
+            const idGuardado = localStorage.getItem('miIdJugador');
             
-            if (accion === 'dar' || accion === 'quitar') {
-                monto = interpretarEntrada(input.value);
-                if (monto <= 0) return alert("Ingresa un monto válido");
-            }
-
-            try {
-                const snapshot = await get(ref(db, `jugadores/${idJugador}`));
-                const jugador = snapshot.val();
-                let updates = {};
-                let logMsg = "";
-                const hora = new Date().toLocaleTimeString('es-MX', {hour: '2-digit', minute:'2-digit'});
-
-                if (accion === 'toggle_activo') {
-                    const nuevoEstado = !(jugador.activo !== false);
-                    updates[`jugadores/${idJugador}/activo`] = nuevoEstado;
-                    logMsg = `<strong>[${hora}] 🏦 BANCO:</strong><br> ${nuevoEstado ? 'Reactivó a' : 'Dejó fuera a'} ${jugador.nombre}`;
-                } else if (accion === 'salida') {
-                    updates[`jugadores/${idJugador}/saldo`] = jugador.saldo + 2000000;
-                    logMsg = `<strong>[${hora}] 🏦 BANCO:</strong><br> Le pagó la Salida a ${jugador.nombre} <strong>+ 2 M</strong>`;
-                } else if (accion === 'dar') {
-                    updates[`jugadores/${idJugador}/saldo`] = jugador.saldo + monto;
-                    logMsg = `<strong>[${hora}] 🏦 BANCO:</strong><br> Le dio a ${jugador.nombre} <strong>+ ${formatearMoneda(monto)}</strong>`;
-                } else if (accion === 'quitar') {
-                    updates[`jugadores/${idJugador}/saldo`] = jugador.saldo - monto;
-                    logMsg = `<strong>[${hora}] 🏦 BANCO:</strong><br> Le cobró/quitó a ${jugador.nombre} <strong>- ${formatearMoneda(monto)}</strong>`;
+            if (salaGuardada && idGuardado) {
+                // Si encontramos el post-it, le avisamos y lo reconectamos
+                const reconectar = confirm(`¡Detectamos que estabas en la sala ${salaGuardada}!\n¿Quieres regresar a la partida?`);
+                if (reconectar) {
+                    window.location.href = `billetera.html?sala=${salaGuardada}&id=${idGuardado}`;
+                } else {
+                    // Si dice que no, rompemos el post-it
+                    localStorage.removeItem('miSalaActiva');
+                    localStorage.removeItem('miIdJugador');
                 }
-
-                await update(ref(db), updates);
-                if (logMsg) await push(ref(db, 'historial'), logMsg);
-                if (input) input.value = '';
-
-            } catch (error) {
-                alert("Hubo un error al conectar con el Banco");
-                console.error(error);
             }
         };
 
-        // Escuchar el historial en tiempo real
-        onValue(ref(db, 'historial'), (snapshot) => {
-            const historialContainer = document.getElementById('historial');
-            historialContainer.innerHTML = '';
-            const registros = [];
-            snapshot.forEach((child) => { registros.push(child.val()); });
-            
-            registros.reverse().forEach(reg => {
-                const div = document.createElement('div');
-                div.className = 'registro';
-                div.innerHTML = reg;
-                historialContainer.appendChild(div);
-            });
-        });
+        // --- FUNCIONES DE LOS BOTONES ---
+        function unirsePartida() {
+            const pin = document.getElementById('pinSala').value.toUpperCase();
+            const jugador = document.getElementById('numeroJugador').value;
 
-        // BOTÓN DE REINICIO CON CANDADO DE SEGURIDAD
-        window.reiniciarBaseDeDatos = function() {
-            const codigo = prompt("⚠️ PELIGRO ⚠️\nEsto borrará todo el historial y regresará a todos a 15 M.\n\nPara confirmar, escribe la palabra exactamente en mayúsculas: REINICIAR");
-            
-            if (codigo === "REINICIAR") {
-                const estadoInicial = {};
-                for (let i = 1; i <= 6; i++) {
-                    const nombreActual = estadoLocalJugadores[i] ? estadoLocalJugadores[i].nombre : `Jugador ${i}`;
-                    estadoInicial[i] = { nombre: nombreActual, saldo: 15000000, activo: true };
-                }
-                
-                set(ref(db, 'jugadores'), estadoInicial);
-                set(ref(db, 'historial'), null);
-                
-                const hora = new Date().toLocaleTimeString('es-MX', {hour: '2-digit', minute:'2-digit'});
-                push(ref(db, 'historial'), `<strong>[${hora}] SISTEMA:</strong> Partida iniciada a 15 M.`);
-            } else if (codigo !== null) {
-                alert("Código incorrecto. Reinicio cancelado.");
-            }
+            if (pin.length < 5) return alert("Ingresa un PIN válido de 5 caracteres.");
+            if (!jugador) return alert("Selecciona qué número de jugador eres.");
+
+            // Pegamos el "post-it" en su celular para que no pierda la sesión
+            localStorage.setItem('miSalaActiva', pin);
+            localStorage.setItem('miIdJugador', jugador);
+
+            // Lo mandamos a la app de la billetera pasándole los datos por la URL
+            window.location.href = `billetera.html?sala=${pin}&id=${jugador}`;
         }
 
-        document.getElementById('btnReiniciar').addEventListener('click', reiniciarBaseDeDatos);
-        document.getElementById('btnFullscreen').addEventListener('click', () => {
-            if (!document.fullscreenElement) { document.documentElement.requestFullscreen(); } 
-            else { document.exitFullscreen(); }
-        });
+        function crearPartida() {
+            const tipo = document.getElementById('tipoJuego').value;
+            // Aquí luego meteremos la lógica para generar el PIN aleatorio en Firebase
+            // Por ahora, generamos uno de mentira para probar la vista
+            const pinesAleatorios = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            let nuevoPin = "";
+            for (let i = 0; i < 5; i++) {
+                nuevoPin += pinesAleatorios.charAt(Math.floor(Math.random() * pinesAleatorios.length));
+            }
+
+            alert(`¡Se crearía la base de datos para la sala ${nuevoPin} con reglas de ${tipo}!\n\nPróximo paso: Llevar al Banquero a la pantalla de control.`);
+        }
     </script>
 </body>
 </html>
