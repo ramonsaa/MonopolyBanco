@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bancopoly - Lobby</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #1e272e; color: white; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .logo-container { text-align: center; margin-bottom: 30px; margin-top: 20px; }
+        .logo-icono { font-size: 50px; margin-bottom: -10px; display: block; }
+        .logo-texto { font-size: 32px; font-weight: bold; margin: 0; letter-spacing: 2px; }
+        .logo-sub { color: #bdc3c7; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+
+        .card { background-color: #2c3e50; width: 100%; max-width: 400px; border-radius: 12px; padding: 20px; box-sizing: border-box; margin-bottom: 20px; box-shadow: 0 8px 16px rgba(0,0,0,0.2); }
+        .card-titulo { font-size: 18px; color: #ecf0f1; border-bottom: 2px solid #34495e; padding-bottom: 10px; margin-top: 0; margin-bottom: 15px; text-align: center; font-weight: bold; }
+
+        input, select, button { width: 100%; padding: 14px; margin-bottom: 15px; font-size: 16px; border-radius: 8px; border: none; box-sizing: border-box; text-align: center; }
+        input { background-color: #ecf0f1; color: #2c3e50; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
+        select { background-color: #ecf0f1; color: #2c3e50; font-weight: bold; cursor: pointer; }
+        
+        .btn-unirse { background-color: #2ecc71; color: white; font-weight: bold; font-size: 18px; cursor: pointer; box-shadow: 0 4px 0 #27ae60; }
+        .btn-crear { background-color: #3498db; color: white; font-weight: bold; font-size: 18px; cursor: pointer; box-shadow: 0 4px 0 #2980b9; }
+        
+        .premium-banner { background: linear-gradient(135deg, #f39c12, #d35400); padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 15px; }
+        .premium-texto { font-size: 13px; font-weight: bold; margin-bottom: 10px; line-height: 1.2; }
+        .btn-premium { background-color: #1e272e; color: #f1c40f; font-weight: bold; font-size: 12px; padding: 8px; border: 1px solid #f1c40f; cursor: pointer; }
+        .opcion-bloqueada { color: #7f8c8d; }
+    </style>
+</head>
+<body>
+
+    <div class="logo-container">
+        <span class="logo-icono">🎩</span>
+        <h1 class="logo-texto">BANCOPOLY</h1>
+        <div class="logo-sub">Billetera Digital</div>
+    </div>
+
+    <div class="card">
+        <h2 class="card-titulo">Entrar a una Partida</h2>
+        <input type="text" id="pinSala" placeholder="PIN DE LA SALA" maxlength="5">
+        <select id="numeroJugador">
+            <option value="">¿Qué jugador eres?</option>
+            <option value="1">Jugador 1 (Rojo)</option>
+            <option value="2">Jugador 2 (Azul)</option>
+            <option value="3">Jugador 3 (Verde)</option>
+            <option value="4">Jugador 4 (Amarillo)</option>
+            <option value="5">Jugador 5 (Morado)</option>
+            <option value="6">Jugador 6 (Naranja)</option>
+        </select>
+        <button class="btn-unirse" onclick="unirsePartida()">Entrar a Jugar</button>
+    </div>
+
+    <div class="card">
+        <h2 class="card-titulo">Crear Nueva Partida</h2>
+        <select id="tipoJuego">
+            <option value="millonario">Monopoly Millonario (15M)</option>
+            <option value="clasico">Monopoly Clásico ($1,500)</option>
+            <option value="turista" disabled class="opcion-bloqueada">Turista Mundial 🔒 PRO</option>
+        </select>
+        <select id="capacidad">
+            <option value="4">Hasta 4 Jugadores (Gratis)</option>
+            <option value="6" disabled class="opcion-bloqueada">Hasta 6 Jugadores 🔒 PRO</option>
+        </select>
+
+        <div class="premium-banner">
+            <div class="premium-texto">👑 Desbloquea el modo VIP: 6 jugadores, Turista Mundial y sonidos.</div>
+            <button class="btn-premium">PRO por $49 MXN</button>
+        </div>
+
+        <button class="btn-crear" onclick="crearPartidaReal()">Crear y ser Banquero</button>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getDatabase, ref, set, push } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAXwEe_UM2tVwS3qm_SUoIO_jgBPw8mkCM",
+            authDomain: "monopolysaava.firebaseapp.com",
+            databaseURL: "https://monopolysaava-default-rtdb.firebaseio.com",
+            projectId: "monopolysaava",
+            storageBucket: "monopolysaava.firebasestorage.app",
+            messagingSenderId: "812339314745",
+            appId: "1:812339314745:web:a8b330d12b310dd4514de8"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Función para crear la sala en Firebase
+        window.crearPartidaReal = async function() {
+            const tipo = document.getElementById('tipoJuego').value;
+            const caracteres = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // Evitamos O, I, 1, 0 por confusión
+            let pin = "";
+            for (let i = 0; i < 5; i++) pin += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
+
+            // Definimos reglas según el juego
+            let saldoIni = 15000000;
+            if (tipo === 'clasico') saldoIni = 1500;
+
+            const estadoInicial = {};
+            for (let i = 1; i <= 6; i++) {
+                estadoInicial[i] = { nombre: `Jugador ${i}`, saldo: saldoIni, activo: true };
+            }
+
+            try {
+                // Creamos la sala en la base de datos
+                await set(ref(db, `partidas/${pin}/jugadores`), estadoInicial);
+                await push(ref(db, `partidas/${pin}/historial`), `Partida iniciada (${tipo})`);
+                
+                // Redirigimos al Banquero a su pantalla con el PIN generado
+                window.location.href = `index.html?sala=${pin}`;
+            } catch (e) {
+                alert("Error al crear sala");
+            }
+        };
+
+        window.unirsePartida = function() {
+            const pin = document.getElementById('pinSala').value.toUpperCase();
+            const id = document.getElementById('numeroJugador').value;
+            if (pin.length < 5 || !id) return alert("Llena todos los campos");
+            
+            // Mandamos al jugador a la billetera unificada
+            window.location.href = `billetera.html?sala=${pin}&id=${id}`;
+        };
+    </script>
+</body>
+</html>
